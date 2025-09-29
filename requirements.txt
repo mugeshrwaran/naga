@@ -1,5 +1,8 @@
-openai
+# openai
+# python-dotenv
+# assemblyai
+# elevenlabs
+# deepgram-sdk
+streamlit
+google-generativeai
 python-dotenv
-assemblyai
-elevenlabs
-deepgram-sdk
