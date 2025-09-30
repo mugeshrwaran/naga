@@ -6,3 +6,4 @@
 streamlit
 google-generativeai
 python-dotenv
+python-docx

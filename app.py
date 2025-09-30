@@ -2,6 +2,8 @@ import streamlit as st
 import google.generativeai as genai
 import dotenv
 import os
+from docx import Document
+from io import BytesIO
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -135,12 +137,36 @@ def main():
                 st.markdown(analysis_text)
             
             with tab2:
-                # Download button for the analysis
+                # # Download button for the analysis as text
+                # st.download_button(
+                #     label="📄 Download Analysis Report (TXT)",
+                #     data=st.session_state['analysis_result'],
+                #     file_name="sales_analysis_report.txt",
+                #     mime="text/plain"
+                # )
+                
+                # Download button for the analysis as Word document
+                analysis_text = st.session_state['analysis_result']
+                
+                # Create Word document
+                doc = Document()
+                doc.add_heading('Sales Performance Analysis Report', 0)
+                
+                # Add content to document
+                for line in analysis_text.split('\n'):
+                    if line.strip():
+                        doc.add_paragraph(line)
+                
+                # Save to BytesIO
+                doc_buffer = BytesIO()
+                doc.save(doc_buffer)
+                doc_buffer.seek(0)
+                
                 st.download_button(
-                    label="📄 Download Analysis Report",
-                    data=st.session_state['analysis_result'],
-                    file_name="sales_analysis_report.txt",
-                    mime="text/plain"
+                    label="📄 Download Analysis Report (Word)",
+                    data=doc_buffer.getvalue(),
+                    file_name="sales_analysis_report.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
         
         else:
