@@ -127,7 +127,7 @@ B. Customer Buying Psychology
 
 4. Salesperson Effectiveness Score: _/10
 
-Based on specific criteria - Score each component objectively:
+Based on specific criteria - Score each component objectively (If Any of the criteria do not apply, adjust weights proportionally):
 
 **Product promotion (30% weight):** _/10
 - 8-10: Presented 5+ Naga products with clear benefits and schemes
