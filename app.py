@@ -131,9 +131,7 @@ Based on specific criteria - Score each component objectively.
 
 IMPORTANT: If any criterion does not apply to this conversation (e.g., no competitor brands mentioned → Competitor handling = N/A), then:
 1. Mark that category as "N/A".
-2. Exclude its weight from the calculation.
-3. Re-normalize the weights proportionally across the remaining applicable categories.
-4. Then recalculate the Final Score based only on applicable categories.
+2. Give full score for that category.
 
 ---
 
@@ -166,9 +164,6 @@ IMPORTANT: If any criterion does not apply to this conversation (e.g., no compet
 **Final Score Calculation:**
 - If all 4 criteria apply:  
   (Product promotion × 0.3) + (Scheme leverage × 0.2) + (Competitor handling × 0.25) + (Customer psychology × 0.25)  
-
-- If any criteria are N/A:  
-  Remove their weights, redistribute remaining weights proportionally, then recalculate the weighted average.  
 
 ------------------------------------------------------------
 
