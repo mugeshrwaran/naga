@@ -80,7 +80,7 @@ Naga Products Performance
 - Naga products promoted: Which Naga products were pitched? Customer response?
 - Volume pushed / upselling: Bulk orders or larger pack sizes attempted? Quantities?
 - Schemes offered: Naga schemes, discounts, free-piece offers mentioned?
-    [Give details of all the schemes mentioned]
+    [Give details of all the schemes mentioned with specifics like which product is offered with which scheme, discount %, which item is free for which scheme, etc.]
 - Cross-selling within Naga portfolio: Were multiple Naga products bundled?
     [Give details of any cross-selling efforts]
 - Acceptance/Rejection: Which Naga products did customer accept or reject?
