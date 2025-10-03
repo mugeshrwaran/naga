@@ -167,41 +167,6 @@ Based on specific criteria - Score each component objectively:
 
 ------------------------------------------------------------
 
-7. Strategic Recommendations
-
-A. Competitor Counter-Strategies
-- How to compete with [Specific Competitor Brand]?
-- What unique value propositions can Naga offer?
-- Should Naga adjust pricing, schemes, or positioning?
-
-B. Customer-Specific Action Plan
-- What are this customer's top 3 priorities?
-- Which Naga products align best with their needs?
-- Recommended approach for next visit?
-
-C. Objection Handling Playbook
-For each major objection raised, provide separately:
-
-**Objection 1:**
-- Objection: [What customer said]
-- Root cause: [Why they feel this way]
-- Recommended response: [How to counter effectively]
-- Long-term solution: [Systemic fix from Naga's side]
-
-**Objection 2:**
-- Objection: [What customer said]
-- Root cause: [Why they feel this way]
-- Recommended response: [How to counter effectively]
-- Long-term solution: [Systemic fix from Naga's side]
-
-**Objection 3:** (Continue for each additional objection)
-- Objection: [What customer said]
-- Root cause: [Why they feel this way]
-- Recommended response: [How to counter effectively]
-- Long-term solution: [Systemic fix from Naga's side]
-
-------------------------------------------------------------
-
 ANALYSIS RULES
 
 ✓ Extract ALL numeric data (quantities, prices, pack sizes, margins, discounts)
