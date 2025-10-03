@@ -125,11 +125,11 @@ B. Customer Buying Psychology
 
 ------------------------------------------------------------
 
-4. Salesperson Effectiveness Score: _/10
+4. Salesperson Effectiveness Score:
 
 Based on specific criteria - Score each component objectively.  
 
-⚠️ IMPORTANT: If any criterion does not apply to this conversation (e.g., no competitor brands mentioned → Competitor handling = N/A), then:
+IMPORTANT: If any criterion does not apply to this conversation (e.g., no competitor brands mentioned → Competitor handling = N/A), then:
 1. Mark that category as "N/A".
 2. Exclude its weight from the calculation.
 3. Re-normalize the weights proportionally across the remaining applicable categories.
