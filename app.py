@@ -14,6 +14,10 @@ def analyze_audio_with_gemini(audio_file):
     
     # Combined prompt for direct audio analysis
     analysis_prompt = """
+
+    CONFIGURATION:
+    Manufacturer: [Naga Foods]
+
     You are a sales analyst for the manufacturer, evaluating a salesperson's audio conversation with a retailer/shopkeeper.
 
     Listen to this audio conversation and provide a comprehensive analysis without needing to transcribe it first.
@@ -24,31 +28,45 @@ def analyze_audio_with_gemini(audio_file):
 
     1. Summarize the conversation, focusing on how the salesperson represents the manufacturer's products, schemes, and volumes.
 
-    2. Build a dynamic Sales Matrix (adapt fields based on conversation relevance), including only relevant categories such as: not in a table format, just bullet points.
-    - Products promoted: Which manufacturer products were pitched?
+    2. Build a dynamic Sales Matrix (adapt fields based on conversation relevance), including only relevant categories as bullet points:
+    - Manufacturer products promoted: Which of OUR manufacturer's products were actively pitched by the salesperson?
     - Volume pushed / upselling: Did the salesperson push bulk orders or larger pack sizes? Include quantities.
     - Scheme / promotional leverage: Did they use manufacturer schemes, discounts, or free-piece offers?
-    - Cross-selling / complementary products: Were other manufacturer products bundled or suggested?
+    - Cross-selling / complementary products: Were other products from OUR manufacturer's lineup bundled or suggested alongside the primary product?
     - Objections / resistance: What prevented higher manufacturer sales?
 
-    3. Give the salesperson an effectiveness score out of 10 based on:
+    3. Competitive Intelligence & Customer Preferences:
+    - Competitor brands mentioned: Which other brands did the customer reference or prefer?
+    - Reasons for competitor preference: Why does the customer prefer competing brands? (price, margins, demand, quality, availability, customer loyalty, etc.)
+    - Customer's current inventory: What stock does the customer already have?
+    - Customer buying patterns: What drives their purchasing decisions? (fast-moving products, profit margins, customer requests, shelf space, payment terms)
+    - Missed opportunities: Where could the salesperson have countered competitor advantages?
+    - Market insights: Any trends or customer demands mentioned that affect product preferences?
+
+    4. Give the salesperson an effectiveness score out of 10 based on:
     - How well they maximize manufacturer's sales and revenue.
     - How well they push schemes and bulk orders.
     - Alignment with manufacturer's product promotion goals.
+    - Ability to handle competitor objections and position our products effectively.
 
-    4. List 3 strengths of the salesperson from the manufacturer's perspective.
+    5. List 3 strengths of the salesperson from the manufacturer's perspective.
 
-    5. List 3 areas to improve to increase manufacturer sales or scheme adoption.
+    6. List 3 areas to improve to increase manufacturer sales or scheme adoption.
 
-    6. Keep analysis structured, concise, and actionable for the manufacturer's sales management.
+    7. Strategic Recommendations:
+    - How can the salesperson better counter competitor positioning?
+    - What customer pain points should be addressed in future visits?
+    - Which manufacturer products or schemes align best with this customer's needs?
 
     Rules:
-    - Extract numeric data (quantities, prices, packs) wherever mentioned in the audio.
+    - Extract numeric data (quantities, prices, packs, margins) wherever mentioned in the audio.
     - Highlight scheme adoption and product mix alignment with manufacturer goals.
     - Focus on maximizing sales and manufacturer benefits, not just customer satisfaction.
     - Use a dynamic matrix — only include relevant categories for this conversation.
     - Analyze the audio directly without providing a transcript first.
-    """
+    - Pay special attention to any competitor brand names, pricing comparisons, or quality discussions.
+    - Note any specific customer requests or market demands that competitors are fulfilling better.
+"""
     
     response = model.generate_content([
         analysis_prompt,
