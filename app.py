@@ -207,6 +207,103 @@ For RECOMMENDATIONS: Base suggestions on specific gaps identified in the convers
 
 ------------------------------------------------------------
 
+------------------------------------------------------------
+
+MANDATORY OUTPUT FORMAT - FOLLOW THIS EXACT STRUCTURE
+
+You MUST follow this precise format. Do NOT write in paragraph style.
+
+**TEMPLATE STRUCTURE:**
+
+# Brand & Product Mapping
+
+A. Naga Brand Products
+- [Product 1]
+- [Product 2]
+- [Product 3]
+
+B. Competitor Brands Mentioned
+- [Brand Name]: [Product categories]
+
+------------------------------------------------------------
+
+# 1. Conversation Summary
+- [Summary point 1]
+- [Summary point 2]
+- [Summary point 3]
+
+------------------------------------------------------------
+
+# 2. Sales Matrix
+
+**Naga Products Performance**
+- Naga products promoted: [Details]
+- Volume pushed / upselling: [Details]
+- Schemes offered: [Details with specifics]
+- Cross-selling within Naga portfolio: [Details]
+- Acceptance/Rejection: [Details]
+
+**Sales Barriers**
+- Objections raised: [Details]
+- Competitor advantages cited: [Details]
+
+------------------------------------------------------------
+
+# 3. Competitive Intelligence & Customer Psychology
+
+A. Competitor Brand Analysis
+
+**Brand 1:**
+- Brand Name: [Name]
+- Products: [Categories]
+- Customer's Current Status: [Details]
+- Reasons for Preference: [Detailed reasons]
+
+**Brand 2:**
+- Brand Name: [Name]
+- Products: [Categories]
+- Customer's Current Status: [Details]
+- Reasons for Preference: [Detailed reasons]
+
+**Brand 3:** (Continue for each additional competitor brand mentioned until all are covered)
+- Brand Name: [Name]
+- Products: [Categories]    
+- Customer's Current Status: [Details]
+- Reasons for Preference: [Detailed reasons]
+
+B. Customer Buying Psychology
+- What truly drives purchase decisions: [Ranked list]
+- Customer's risk tolerance: [Details]
+- Stock rotation preferences: [Details]
+
+------------------------------------------------------------
+
+# 4. Salesperson Effectiveness Score
+
+**Product promotion (30% weight):** _/10
+**Scheme leverage (20% weight):** _/10
+**Competitor handling (25% weight):** _/10
+**Customer psychology understanding (25% weight):** _/10
+
+**Final Score Calculation:**
+[Calculation formula] = _/10
+
+------------------------------------------------------------
+
+# 5. Salesperson Strengths
+- [Strength 1]
+- [Strength 2]
+- [Strength 3]
+
+------------------------------------------------------------
+
+# 6. Areas for Improvement
+- [Improvement 1]
+- [Improvement 2]
+- [Improvement 3]
+
+------------------------------------------------------------
+
 CRITICAL REMINDERS
 
 - DO NOT assume any brand is Naga unless explicitly stated
@@ -214,6 +311,7 @@ CRITICAL REMINDERS
 - DO capture both stated reasons AND underlying psychology
 - DO identify non-price factors driving brand preference
 - DO note when customer prefers competitor despite Naga being cheaper/better
+- FOLLOW THE EXACT FORMAT ABOVE - DO NOT DEVIATE TO PARAGRAPH STYLE
 """
     
     response = model.generate_content([
