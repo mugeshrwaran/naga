@@ -20,7 +20,7 @@ def analyze_audio_with_gemini(audio_file):
     )
     
     model = genai.GenerativeModel(
-        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
         generation_config=generation_config
     )
     
@@ -54,14 +54,14 @@ Brand & Product Mapping (Complete this FIRST)
 Before analysis, categorize ALL brands and products mentioned in the conversation:
 
 A. Naga Brand Products
-- [List ONLY product names]
+- [List product names only]
 
 B. Competitor Brands Mentioned
 - [List EACH competitor brand separately with details]
 
 ------------------------------------------------------------
 
-STEP 2: Comprehensive Sales Analysis
+Comprehensive Sales Analysis
 
 Listen to this tamil audio conversation and provide analysis without transcribing first.
 
@@ -80,7 +80,9 @@ Naga Products Performance
 - Naga products promoted: Which Naga products were pitched? Customer response?
 - Volume pushed / upselling: Bulk orders or larger pack sizes attempted? Quantities?
 - Schemes offered: Naga schemes, discounts, free-piece offers mentioned?
+    [Give details of all the schemes mentioned]
 - Cross-selling within Naga portfolio: Were multiple Naga products bundled?
+    [Give details of any cross-selling efforts]
 - Acceptance/Rejection: Which Naga products did customer accept or reject?
 
 Sales Barriers
@@ -98,19 +100,22 @@ For EACH competitor brand mentioned, document separately:
 - Brand Name: [e.g., Shakti, Nandi, etc.]
 - Products: Which product categories?
 - Customer's Current Status: Does customer stock it? How much?
-- Reasons for Preference: Why does customer prefer this brand in detail?
+- Reasons for Preference: Why does customer prefer this brand than Naga in detail?
+    - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 
 **Brand 2:**
 - Brand Name: [Next competitor brand]
 - Products: Which product categories?
 - Customer's Current Status: Does customer stock it? How much?
-- Reasons for Preference: Why does customer prefer this brand in detail?
+- Reasons for Preference: Why does customer prefer this brand than Naga in detail?
+    - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 
 **Brand 3:** (Continue for each additional competitor brand mentioned)
 - Brand Name: [Next competitor brand]
 - Products: Which product categories?
 - Customer's Current Status: Does customer stock it? How much?
-- Reasons for Preference: Why does customer prefer this brand in detail?
+- Reasons for Preference: Why does customer prefer this brand than Naga in detail?
+    - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 
 B. Customer Buying Psychology
 - What truly drives purchase decisions? (rank by importance)
@@ -289,13 +294,6 @@ def main():
                 st.markdown(analysis_text)
             
             with tab2:
-                # # Download button for the analysis as text
-                # st.download_button(
-                #     label="📄 Download Analysis Report (TXT)",
-                #     data=st.session_state['analysis_result'],
-                #     file_name="sales_analysis_report.txt",
-                #     mime="text/plain"
-                # )
                 
                 # Download button for the analysis as Word document
                 analysis_text = st.session_state['analysis_result']
@@ -347,10 +345,12 @@ def main():
                 doc.save(doc_buffer)
                 doc_buffer.seek(0)
                 
+                # Remove file extension from uploaded file name for the report
+                base_filename = os.path.splitext(uploaded_file.name)[0]
                 st.download_button(
                     label="📄 Download Analysis Report (Word)",
                     data=doc_buffer.getvalue(),
-                    file_name="sales_analysis_report.docx",
+                    file_name=f"{base_filename}_report.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
         
