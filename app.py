@@ -110,7 +110,7 @@ For EACH competitor brand mentioned, document separately:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 
-**Brand 3:** (Continue for each additional competitor brand mentioned or online retailer)
+**Brand 3:** (Continue for each additional competitor brand mentioned until all are covered)
 - Brand Name: [Next competitor brand]
 - Products: Which product categories?
 - Customer's Current Status: Does customer stock it? How much?
