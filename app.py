@@ -127,7 +127,15 @@ B. Customer Buying Psychology
 
 4. Salesperson Effectiveness Score: _/10
 
-Based on specific criteria - Score each component objectively (If Any of the criteria do not apply, adjust weights proportionally):
+Based on specific criteria - Score each component objectively.  
+
+⚠️ IMPORTANT: If any criterion does not apply to this conversation (e.g., no competitor brands mentioned → Competitor handling = N/A), then:
+1. Mark that category as "N/A".
+2. Exclude its weight from the calculation.
+3. Re-normalize the weights proportionally across the remaining applicable categories.
+4. Then recalculate the Final Score based only on applicable categories.
+
+---
 
 **Product promotion (30% weight):** _/10
 - 8-10: Presented 5+ Naga products with clear benefits and schemes
@@ -153,8 +161,14 @@ Based on specific criteria - Score each component objectively (If Any of the cri
 - 4-5: Basic awareness of customer concerns
 - 1-3: Poor understanding of what drives customer decisions
 
+---
+
 **Final Score Calculation:**
-(Product promotion × 0.3) + (Scheme leverage × 0.2) + (Competitor handling × 0.25) + (Customer psychology × 0.25) = _/10
+- If all 4 criteria apply:  
+  (Product promotion × 0.3) + (Scheme leverage × 0.2) + (Competitor handling × 0.25) + (Customer psychology × 0.25)  
+
+- If any criteria are N/A:  
+  Remove their weights, redistribute remaining weights proportionally, then recalculate the weighted average.  
 
 ------------------------------------------------------------
 
