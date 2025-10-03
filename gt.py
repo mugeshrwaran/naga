@@ -78,7 +78,7 @@ def analyze_with_gpt(transcript):
 
 
 if __name__ == "__main__":
-    audio_file_path = "C:/Users/w1mug/Desktop/naga/audio/WhatsApp Audio 1.mp4"
+    audio_file_path = "D:/naga/call recordings/Edited 3-WhatsApp Audio 2025-09-16 at 8.03.07 PM.mp4.mp3"
 
     transcript = transcribe_audio_with_gemini(audio_file_path)
     print('Transcript:\n', transcript)
