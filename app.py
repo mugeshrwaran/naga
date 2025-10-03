@@ -29,7 +29,7 @@ def analyze_audio_with_gemini(audio_file):
     1. Summarize the conversation, focusing on how the salesperson represents the manufacturer's products, schemes, and volumes.
 
     2. Build a dynamic Sales Matrix (adapt fields based on conversation relevance), including only relevant categories as bullet points:
-    - Manufacturer products promoted: Which of OUR manufacturer's products were actively pitched by the salesperson?
+    - Products Discussed: Which of the products were discussed in this conversation?
     - Volume pushed / upselling: Did the salesperson push bulk orders or larger pack sizes? Include quantities.
     - Scheme / promotional leverage: Did they use manufacturer schemes, discounts, or free-piece offers?
     - Cross-selling / complementary products: Were other products from OUR manufacturer's lineup bundled or suggested alongside the primary product?
