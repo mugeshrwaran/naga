@@ -12,9 +12,9 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 def analyze_audio_with_gemini(audio_file):
     # Configure generation parameters for consistency
     generation_config = genai.types.GenerationConfig(
-        temperature=0.1,  # Low temperature for more consistent responses
-        top_p=0.8,        # Reduce randomness in token selection
-        top_k=20,         # Limit vocabulary choices
+        temperature=0.0,  # Low temperature for more consistent responses
+        top_p=0.1,        # Reduce randomness in token selection
+        top_k=1,         # Limit vocabulary choices
         max_output_tokens=4000,
         candidate_count=1
     )
@@ -54,7 +54,8 @@ Brand & Product Mapping (Complete this FIRST)
 Before analysis, categorize ALL brands and products mentioned in the conversation:
 
 A. Naga Brand Products
-- [List product names only]
+- [List of Products from Manufacturer, Schemes are not discussed]
+- [List of Products from Manufacturer, where schemes are discussed]
 
 B. Competitor Brands Mentioned
 - [List EACH competitor brand separately with details]
@@ -90,8 +91,37 @@ Sales Barriers
 - Competitor advantages cited: What specific advantages did competitors have?
 
 ------------------------------------------------------------
+3. Customer Buying Patterns
 
-3. Competitive Intelligence & Customer Psychology
+A. Regularly buying products (Customer commits to buy BEFORE schemes are explained OR shows clear intent to buy regardless of schemes)
+    - [List products where customer showed immediate interest or agreed to buy before any schemes/offers were mentioned]
+    - [Also include products where customer clearly intended to buy but scheme was mentioned first - analyze if the purchase decision was truly influenced by the scheme or not]
+    - [Note: These are products customer buys based on regular demand/habit/necessity]
+
+B. Scheme Based Orders (Customer commits to buy ONLY BECAUSE schemes influenced their decision)
+    - [List products where customer showed hesitation, said no initially, or was undecided BUT changed their mind specifically because of the scheme/offer]
+    - [Include products where customer increased quantity due to schemes]
+    - [Note: These purchases were clearly driven by the schemes/offers - customer behavior changed due to the incentive]
+
+CRITICAL ANALYSIS REQUIRED - Look for these indicators:
+
+**For Regular Buying:**
+- Customer asks for the product immediately without hearing schemes
+- Customer says "I need this" or "Give me [quantity]" before schemes are mentioned
+- Customer shows clear intent to purchase regardless of offers
+- Customer maintains same quantity even after hearing schemes
+
+**For Scheme-Based Buying:**
+- Customer initially hesitates or says "Let me think" but changes mind after scheme
+- Customer says "No" first but then says "Okay" after hearing the offer
+- Customer increases quantity specifically for the scheme (e.g., "Then give me 10kg instead of 5kg")
+- Customer explicitly mentions the scheme as reason for buying (e.g., "Because of the free piece, I'll take it")
+- Customer compares and decides based on the offer value
+
+**IMPORTANT:** If customer was already planning to buy and scheme was just mentioned coincidentally, categorize as REGULAR buying, not scheme-based.
+------------------------------------------------------------
+
+4. Competitive Intelligence & Customer Psychology
 
 A. Competitor Brand Analysis
 For EACH competitor brand mentioned, document separately:
@@ -122,10 +152,12 @@ B. Customer Buying Psychology
 - Is it price, brand recognition, customer demand, margins, or something else?
 - Customer's risk tolerance (willing to try new brands?)
 - Stock rotation preferences (fast-moving vs slow-moving)
+- Is he open to switching if Naga offers better schemes or prices?
+- How is the customer buying behaviour? (Like is he buys product if more schemes are offered, or if the product is on discount, or if the product is a well-known brand, or if more free pieces are offered, etc.)
 
 ------------------------------------------------------------
 
-4. Salesperson Effectiveness Score:
+5. Salesperson Effectiveness Score:
 
 Based on specific criteria - Score each component objectively.  
 
@@ -167,14 +199,14 @@ IMPORTANT: If any criterion does not apply to this conversation (e.g., no compet
 
 ------------------------------------------------------------
 
-5. Salesperson Strengths
+6. Salesperson Strengths
 - [Strength 1]
 - [Strength 2]
 - [Strength 3]
 
 ------------------------------------------------------------
 
-6. Areas for Improvement
+7. Areas for Improvement
 - [Improvement 1]
 - [Improvement 2]
 - [Improvement 3]
@@ -249,7 +281,15 @@ B. Competitor Brands Mentioned
 
 ------------------------------------------------------------
 
-# 3. Competitive Intelligence & Customer Psychology
+# 3. Customer Buying Patterns
+
+A. Regularly buying products (Customer commits to buy BEFORE schemes OR shows clear intent regardless of schemes)
+    - [Products List - immediate interest/commitment or clear intent to buy regardless]
+    
+B. Scheme Based Orders (Customer commits to buy ONLY BECAUSE schemes influenced their decision)
+    - [Products List - hesitation turned to purchase, or quantity increased due to schemes]------------------------------------------------------------
+
+# 4. Competitive Intelligence & Customer Psychology
 
 A. Competitor Brand Analysis
 
@@ -275,10 +315,12 @@ B. Customer Buying Psychology
 - What truly drives purchase decisions: [Ranked list]
 - Customer's risk tolerance: [Details]
 - Stock rotation preferences: [Details]
+- Openness to switching brands: [Details]
+- How is the customer buying behaviour: [Details]
 
 ------------------------------------------------------------
 
-# 4. Salesperson Effectiveness Score
+# 5. Salesperson Effectiveness Score
 
 **Product promotion (30% weight):** _/10
 **Scheme leverage (20% weight):** _/10
@@ -290,14 +332,14 @@ B. Customer Buying Psychology
 
 ------------------------------------------------------------
 
-# 5. Salesperson Strengths
+# 6. Salesperson Strengths
 - [Strength 1]
 - [Strength 2]
 - [Strength 3]
 
 ------------------------------------------------------------
 
-# 6. Areas for Improvement
+# 7. Areas for Improvement
 - [Improvement 1]
 - [Improvement 2]
 - [Improvement 3]
