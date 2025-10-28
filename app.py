@@ -4,6 +4,8 @@ import dotenv
 import os
 from docx import Document
 from io import BytesIO
+import pandas as pd
+import plotly.express as px
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -199,14 +201,25 @@ IMPORTANT: If any criterion does not apply to this conversation (e.g., no compet
 
 ------------------------------------------------------------
 
-6. Salesperson Strengths
+6. Salesperson Ability Analysis
+- How salesperson handles the conversation, objections, competitor mentions, and customer concerns.
+
+------------------------------------------------------------
+
+7. Product Price Analysis
+ What are all the Naga products that the customer thinks the price is too high?
+ If so, list them with details like which product, what price point, and customer's exact concerns.
+
+------------------------------------------------------------
+
+8. Salesperson Strengths
 - [Strength 1]
 - [Strength 2]
 - [Strength 3]
 
 ------------------------------------------------------------
 
-7. Areas for Improvement
+9. Areas for Improvement
 - [Improvement 1]
 - [Improvement 2]
 - [Improvement 3]
@@ -332,14 +345,24 @@ B. Customer Buying Psychology
 
 ------------------------------------------------------------
 
-# 6. Salesperson Strengths
+# 6. Salesperson Ability Analysis
+- [Summary]
+
+------------------------------------------------------------
+
+# 7. Product Price Analysis
+- [Summary]
+
+------------------------------------------------------------
+
+# 8. Salesperson Strengths
 - [Strength 1]
 - [Strength 2]
 - [Strength 3]
 
 ------------------------------------------------------------
 
-# 7. Areas for Improvement
+# 9. Areas for Improvement
 - [Improvement 1]
 - [Improvement 2]
 - [Improvement 3]
@@ -370,93 +393,181 @@ def main():
         page_icon="📊",
         layout="wide"
     )
-    
+
+    # Initialize page state
+    if 'page' not in st.session_state:
+        st.session_state['page'] = 'home'
+
+    def render_dashboard():
+
+        st.title("📊 Naga Sales Performance Dashboard")
+
+        excel_path = 'C:/Users/w1mug/Desktop/naga/data/Sales_Performance_Summary_Sample_Data.xlsx'
+
+        # Load Data
+        try:
+            df = pd.read_excel(excel_path)
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            if st.button("⬅️ Back to Home"):
+                st.session_state['page'] = 'home'
+            return
+
+        # --- KPIs ---
+        st.subheader("📈 Key Weekly Summary Metrics")
+        kpi_cols = st.columns(4)
+        kpi_cols[0].metric("📋 Total Weeks", len(df))
+        kpi_cols[1].metric("🧾 Avg Reports/Week", f"{df['Total Reports Analysed'].mean():.1f}")
+        kpi_cols[2].metric("🛒 Avg Acceptance Rate", f"{df['Avg Acceptance Rate (%)'].mean():.1f}%")
+        kpi_cols[3].metric("💰 Avg Scheme Influence", f"{df['Scheme Influence %'].mean():.1f}%")
+
+        st.divider()
+
+        # --- Product Performance Trends ---
+        st.subheader("🧺 Product Performance Trends")
+        fig1 = px.bar(df, x='Period', y=['Total Products Accepted', 'Total Products Rejected'],
+                    barmode='group', title="Accepted vs Rejected Products per Week")
+        st.plotly_chart(fig1, use_container_width=True)
+
+        # Acceptance rate trend
+        fig2 = px.line(df, x='Period', y='Avg Acceptance Rate (%)',
+                    title="Acceptance Rate Trend", markers=True)
+        st.plotly_chart(fig2, use_container_width=True)
+
+        st.divider()
+
+        # --- Scheme Effectiveness ---
+        st.subheader("🎯 Scheme Effectiveness Overview")
+        fig3 = px.bar(df, x='Period', y='Scheme Influence %', color='Most Effective Scheme Type',
+                    title="Scheme Influence % by Week and Scheme Type")
+        st.plotly_chart(fig3, use_container_width=True)
+
+        fig4 = px.line(df, x='Period', y='Scheme-Driven Buyers (%)',
+                    title="Scheme-Driven Buyers Trend", markers=True)
+        st.plotly_chart(fig4, use_container_width=True)
+
+        st.divider()
+
+        # --- Competitor Insights ---
+        st.subheader("🏁 Competitor Insights")
+        fig5 = px.bar(df, x='Period', y='Competitor Mentions (Total)', color='Most Common Competitor Advantage',
+                    title="Competitor Mentions per Week")
+        st.plotly_chart(fig5, use_container_width=True)
+
+        fig6 = px.line(df, x='Period', y='% Reports Mentioning Online Price Issue',
+                    title="Online Price Issue Mentions (%)", markers=True)
+        st.plotly_chart(fig6, use_container_width=True)
+
+        st.divider()
+
+        # --- Objection Analysis ---
+        st.subheader("🗣️ Objection Analysis")
+        fig7 = px.bar(df, x='Period',
+                    y=['% Pricing Objection', '% Brand Loyalty Objection', '% Product Fit / Stock Concerns'],
+                    barmode='group', title="Customer Objection Breakdown per Week")
+        st.plotly_chart(fig7, use_container_width=True)
+
+        st.divider()
+
+        # --- Overall Effectiveness ---
+        st.subheader("⭐ Overall Sales Effectiveness")
+        fig8 = px.line(df, x='Period', y=['Avg Product Promotion Score',
+                                        'Avg Scheme Leverage Score',
+                                        'Avg Competitor Handling Score',
+                                        'Overall Sales Effectiveness'],
+                    title="Performance Score Trends", markers=True)
+        st.plotly_chart(fig8, use_container_width=True)
+
     st.title("Sales Call Analysis Tool")
-    st.markdown("Upload an audio file of a sales conversation to get detailed analysis.")
-    
-    # Sidebar for instructions
+
+    # Sidebar for instructions and navigation
     with st.sidebar:
-        st.header("Instructions")
-        st.markdown("""
-        1. Upload an audio file (MP3, WAV, MP4, etc.)
-        2. Click 'Analyze Audio' to process
         
-        **Supported formats:**
-        - MP3, WAV, MP4, M4A, OGG
-        """)
-        
-        if st.button("Clear Analysis"):
-            if 'analysis_result' in st.session_state:
-                del st.session_state['analysis_result']
+        if st.button("Home"):
+            st.session_state['page'] = 'home'
             st.rerun()
-    
-    # Main content area
+
+        if st.button("View Dashboard"):
+            st.session_state['page'] = 'dashboard'
+            st.rerun()
+
+    # Route pages
+    if st.session_state.get('page', 'home') == 'dashboard':
+        render_dashboard()
+        return
+
+    # Main content area (home)
     col1, col2 = st.columns([1, 2])
-    
+
     with col1:
         st.header("📁 Upload Audio")
-        
+
         # Audio file uploader
         uploaded_file = st.file_uploader(
             "Choose an audio file",
             type=['mp3', 'wav', 'mp4', 'm4a', 'ogg'],
             help="Upload your sales conversation audio file"
         )
-        
+
         if uploaded_file is not None:
             st.success(f"✅ File uploaded: {uploaded_file.name}")
-            
+
             # Audio player
             st.audio(uploaded_file)
-            
+
             # Analyze button
             if st.button("🚀 Analyze Audio", type="primary"):
                 with st.spinner("🔄 Analyzing audio with Gemini AI..."):
                     try:
                         # Read the uploaded file
                         audio_data = uploaded_file.read()
-                        
+
                         # Analyze with Gemini
                         analysis = analyze_audio_with_gemini(audio_data)
-                        
+
                         # Store in session state
                         st.session_state['analysis_result'] = analysis
-                        
+
                         st.success("✅ Analysis completed!")
-                        
+
                     except Exception as e:
                         st.error(f"❌ Error analyzing audio: {str(e)}")
-    
+
     with col2:
         st.header("📊 Analysis Results")
-        
+
         if 'analysis_result' in st.session_state:
+
+            if st.button("Clear Analysis"):
+                if 'analysis_result' in st.session_state:
+                    del st.session_state['analysis_result']
+                st.rerun()
+
             # Display analysis in a nice format
             st.markdown("### 📈 Sales Performance Analysis")
-            
+
             # Create tabs for better organization
             tab1, tab2 = st.tabs(["📋 Full Report", "💾 Export"])
-            
+
             with tab1:
                 # Display the analysis with proper formatting
                 analysis_text = st.session_state['analysis_result']
                 st.markdown(analysis_text)
-            
+
             with tab2:
-                
                 # Download button for the analysis as Word document
                 analysis_text = st.session_state['analysis_result']
-                
+
                 # Create Word document
                 doc = Document()
                 doc.add_heading('Sales Performance Analysis Report', 0)
-                
+
                 # Process content to handle markdown formatting
                 def process_line_to_word(doc, line):
                     line = line.strip()
                     if not line:
                         return
-                    
+
                     # Check if it's a heading (starts with #)
                     if line.startswith('#'):
                         # Count the number of # to determine heading level
@@ -466,7 +577,7 @@ def main():
                                 heading_level += 1
                             else:
                                 break
-                        
+
                         # Remove the # symbols and add as heading
                         heading_text = line.lstrip('#').strip()
                         if heading_text:
@@ -474,26 +585,26 @@ def main():
                     else:
                         # Handle regular paragraphs with bold formatting
                         paragraph = doc.add_paragraph()
-                        
+
                         # Split text by ** to handle bold formatting
                         parts = line.split('**')
-                        
+
                         for i, part in enumerate(parts):
                             if part:  # Only add non-empty parts
                                 if i % 2 == 0:  # Even index = normal text
                                     paragraph.add_run(part)
                                 else:  # Odd index = bold text
                                     paragraph.add_run(part).bold = True
-                
+
                 # Add content to document
                 for line in analysis_text.split('\n'):
                     process_line_to_word(doc, line)
-                
+
                 # Save to BytesIO
                 doc_buffer = BytesIO()
                 doc.save(doc_buffer)
                 doc_buffer.seek(0)
-                
+
                 # Remove file extension from uploaded file name for the report
                 base_filename = os.path.splitext(uploaded_file.name)[0]
                 st.download_button(
@@ -502,7 +613,7 @@ def main():
                     file_name=f"{base_filename}_report.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-        
+
         else:
             st.info("👆 Upload an audio file and click 'Analyze Audio' to see results here.")
 

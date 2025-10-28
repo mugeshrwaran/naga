@@ -7,3 +7,5 @@ streamlit
 google-generativeai
 python-dotenv
 python-docx
+plotly
+pandas
