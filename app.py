@@ -402,7 +402,7 @@ def main():
 
         st.title("📊 Naga Sales Performance Dashboard")
 
-        excel_path = 'C:/Users/w1mug/Desktop/naga/data/Sales_Performance_Summary_Sample_Data.xlsx'
+        excel_path = os.path.join("data", "Sales_Performance_Summary_Sample_Data.xlsx")
 
         # Load Data
         try:
