@@ -458,7 +458,7 @@ def main():
             return
 
         # --- KPIs ---
-        st.subheader(f"📈 {selected_month} Month Summary Metrics")
+        st.subheader(f"{selected_month} Sales Performance Overview")
         kpi_cols = st.columns(4)
         kpi_cols[0].metric("🧾 Total Reports", f"{df['Total Reports Analysed'].iloc[0]}")
         kpi_cols[1].metric("🛒 Overall Sales Effectiveness", f"{df['Overall Sales Effectiveness'].iloc[0]}")
@@ -471,14 +471,13 @@ def main():
         # PRODUCT DISCUSSION TREEMAP
         # ========================
         if 'Products Discussed' in df.columns:
-            st.subheader("Product Discussion Frequency")
+            st.subheader("Product Mention Rate")
 
             try:
                 all_products = []
                 for _, row in df.iterrows():
                     products = [p.strip() for p in str(row["Products Discussed"]).split(",") if p.strip()]
                     all_products.extend(products)
-                    print(len(all_products), "\n")
 
                 if all_products:
                     counts = Counter(all_products)
@@ -487,7 +486,7 @@ def main():
 
                     fig = px.treemap(
                         freq_df,
-                        path=[px.Constant("Products Discussed"), 'Product'],
+                        path=[px.Constant("Product Mention Rate"), 'Product'],
                         values='Count',
                         color='Count',
                         color_continuous_scale='Blues',
@@ -510,14 +509,13 @@ def main():
         # COMPETITOR TREEMAP
         # ========================
         if 'Competitors' in df.columns:
-            st.subheader("Competitor Mentions Frequency")
+            st.subheader("Competitor Mention Rate")
 
             try:
                 all_comps = []
                 for _, row in df.iterrows():
                     comps = [c.strip() for c in str(row["Competitors"]).split(",") if c.strip()]
                     all_comps.extend(comps)
-                    print(len(all_comps), "\n")
                 if all_comps:
                     counts = Counter(all_comps)
                     freq_df = pd.DataFrame(counts.items(), columns=['Competitor', 'Count'])
@@ -525,7 +523,7 @@ def main():
 
                     fig = px.treemap(
                         freq_df,
-                        path=[px.Constant("Competitors"), 'Competitor'],
+                        path=[px.Constant("Competitor Mention Rate"), 'Competitor'],
                         values='Count',
                         color='Count',
                         color_continuous_scale='Blues',
@@ -555,7 +553,6 @@ def main():
                 for _, row in df.iterrows():
                     products = [p.strip() for p in str(row["Competitor Products"]).split(",") if p.strip()]
                     all_comp_products.extend(products)
-                    print(len(all_comp_products), "\n")
                 if all_comp_products:
                     counts = Counter(all_comp_products)
                     freq_df = pd.DataFrame(counts.items(), columns=['Product', 'Count'])
@@ -563,7 +560,7 @@ def main():
 
                     fig = px.treemap(
                         freq_df,
-                        path=[px.Constant("Competitor Products"), 'Product'],
+                        path=[px.Constant("Competitor Product Preference"), 'Product'],
                         values='Count',
                         color='Count',
                         color_continuous_scale='Blues',
@@ -586,14 +583,13 @@ def main():
         # PRICING CONCERN TREEMAP
         # ========================
         if 'Pricing Concerns' in df.columns:
-            st.subheader("Pricing Concerns")
+            st.subheader("Products with Pricing Concerns")
 
             try:
                 all_concerns = []
                 for _, row in df.iterrows():
                     concerns = [p.strip() for p in str(row["Pricing Concerns"]).split(",") if p.strip()]
                     all_concerns.extend(concerns)
-                    print(len(all_concerns), "\n")
                 if all_concerns:
                     counts = Counter(all_concerns)
                     freq_df = pd.DataFrame(counts.items(), columns=['Concern', 'Count'])
@@ -601,7 +597,7 @@ def main():
 
                     fig = px.treemap(
                         freq_df,
-                        path=[px.Constant("Pricing Concerns"), 'Concern'],
+                        path=[px.Constant("Products with Pricing Concerns"), 'Concern'],
                         values='Count',
                         color='Count',
                         color_continuous_scale='Blues',
@@ -649,7 +645,7 @@ def main():
             return
 
         # --- KPIs ---
-        st.subheader(f"📈 Monthly Metrics — {selected_salesperson}")
+        st.subheader(f"Performance Overview — {selected_salesperson}")
         kpi_cols = st.columns(4)
         kpi_cols[0].metric("🧾 Total Reports", f"{person_df['Total Reports Analysed'].iloc[0]}")
         kpi_cols[1].metric("🛒 Sales Effectiveness", f"{person_df['Overall Sales Effectiveness'].iloc[0]}")
@@ -660,7 +656,7 @@ def main():
 
         score_columns = ['Product promotion', 'Scheme leverage', 'Competitor handling', 'Customer psychology understanding']
         avg_scores = person_df[score_columns].iloc[0].tolist()
-        categories = ['Product Promotion', 'Scheme Leverage', 'Competitor Handling', 'Customer Psychology Understanding']
+        categories = ['Product Promotion Skill', 'Scheme Utilization', 'Competitor Handling Skill', 'Customer Understanding']
 
         # Create Radar chart
         fig = go.Figure(data=go.Scatterpolar(
@@ -681,6 +677,7 @@ def main():
         st.plotly_chart(fig, use_container_width=True)
     
     def summary_dashboard():
+        
         st.title("Summary Dashboard")
         monthly_excel_path = os.path.join("data", 'monthly.xlsx')
 
@@ -803,7 +800,8 @@ def main():
             y='Count',
             text='Count',
             color='Count',
-            color_continuous_scale='Blues'
+            color_continuous_scale='Bluered',
+
         )
 
         # Style adjustments
@@ -818,6 +816,33 @@ def main():
         # Display in Streamlit
         st.plotly_chart(fig_summary, use_container_width=True)
 
+        st.divider()
+
+        # Path to your Excel file
+        excel_path = os.path.join("data", "products.xlsx")
+
+        try:
+            df = pd.read_excel(excel_path)
+            
+            # Optional: Clean column names
+            df.columns = [col.strip().title() for col in df.columns]
+
+            st.subheader("Product-wise Competitor Overview")
+
+            # Display the dataframe neatly
+            st.dataframe(
+                df.style.set_properties(**{
+                    'background-color': '#f9f9f9',
+                    'color': '#333',
+                    'border-color': '#ddd'
+                }),
+                use_container_width=True,
+                hide_index=True
+            )
+
+        except Exception as e:
+            st.error(f"❌ Failed to load product data: {e}")
+
         
     # Sidebar for instructions and navigation
     with st.sidebar:
@@ -826,11 +851,11 @@ def main():
             st.session_state['page'] = 'home'
             st.rerun()
 
-        if st.button("View Overall Dashboard"):
+        if st.button("Sales Performance Dashboard"):
             st.session_state['page'] = 'dashboard'
             st.rerun()
 
-        if st.button("View Individual Dashboard"):
+        if st.button("Salesperson Dashboard"):
             st.session_state['page'] = 'individual_dashboard'
             st.rerun()
 
