@@ -6,6 +6,9 @@ from docx import Document
 from io import BytesIO
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from collections import Counter
+
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -13,17 +16,17 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def analyze_audio_with_gemini(audio_file):
     # Configure generation parameters for consistency
-    generation_config = genai.types.GenerationConfig(
-        temperature=0.0,  # Low temperature for more consistent responses
-        top_p=0.1,        # Reduce randomness in token selection
-        top_k=1,         # Limit vocabulary choices
-        max_output_tokens=4000,
-        candidate_count=1
-    )
+    # generation_config = genai.types.GenerationConfig(
+    #     temperature=0.0,  # Low temperature for more consistent responses
+    #     top_p=0.1,        # Reduce randomness in token selection
+    #     top_k=1,         # Limit vocabulary choices
+    #     max_output_tokens=4000,
+    #     candidate_count=1
+    # )
     
     model = genai.GenerativeModel(
-        "gemini-2.0-flash",
-        generation_config=generation_config
+        "gemini-2.5-pro",
+        # generation_config=generation_config
     )
     
     # Combined prompt for direct audio analysis
@@ -49,6 +52,18 @@ CRITICAL INSTRUCTION - Brand Identification
 
 IMPORTANT: DO NOT assume a product is Naga's unless explicitly stated!
 
+------------------------------------------------------------
+
+SPEAKER CONTEXT RULES (CRITICAL)
+ 
+Before mapping brands and products, determine who is speaking:
+ 
+- If the **Sales Representative** mentions a product, assume it is **Naga’s product** unless they clearly say it’s a competitor.
+- If the **Customer (store owner)** mentions a product or brand name, assume it is a **competitor brand**, unless the Sales Rep later confirms it belongs to Naga.
+- If both speakers mention the same product name, assign ownership based on context and tone:
+  - If Sales Rep is promoting or explaining → Naga’s product.
+  - If Customer is comparing or complaining → Competitor product.
+- When uncertain, label it as **“Ambiguous – Needs context”** and do not count it in Naga product analysis.
 ------------------------------------------------------------
 
 Brand & Product Mapping (Complete this FIRST)
@@ -238,9 +253,25 @@ ANALYSIS RULES
 ✓ Assess whether salesperson understood the customer's true concerns
 ✓ Provide actionable, specific recommendations - not generic advice
 ✓ Use a dynamic matrix - only include categories relevant to THIS conversation
-✓ Analyze audio directly without transcribing first
-
+✓ Analyze audio by using both transcription as well as audio, as sometimes transcription might help in understanding the context better and audio might give better clarity on tone, emphasis, pauses, etc.
+✓ Clearly Identify the Salesperson and the Customer in the conversation before analysis by the conversation context.
+✓ Identify in what context does the salesperson is addressing about the price of the Naga product is high or low than the competitors before adding it to the price analysis section or at some other sections, Because sometimes the salesperson might be saying that the price is low compared to competitors, not high so it should not be added to the price analysis section as a high price concern. These things should be addressed carefully.
+✓ IMPORTANT: The Analysis report should be in English only.
+✓ Always cross-check the speaker before assigning brand ownership:
+  - Sales Rep statements = Naga context
+  - Customer statements = Competitor context
+  - Never assume ownership without confirming who said it.
 ------------------------------------------------------------
+
+Brand & Product Mapping
+ 
+# Speaker & Brand Context Mapping
+| Speaker | Brand | Product | Context / Ownership Confirmation |
+|----------|--------|----------|--------------------------------|
+| Sales Rep | Naga | [Product] | Confirmed as Naga (own product) |
+| Customer | [Brand] | [Product] | Competitor product mentioned by customer |
+| Sales Rep | — | [Product] | No brand mentioned → assumed Naga |
+| Customer | — | [Product] | Ambiguous – Needs context |
 
 CONSISTENCY REQUIREMENTS
 
@@ -399,10 +430,9 @@ def main():
         st.session_state['page'] = 'home'
 
     def render_dashboard():
+        st.title("Sales Performance Dashboard")
 
-        st.title("📊 Naga Sales Performance Dashboard")
-
-        excel_path = os.path.join("data", "Sales_Performance_Summary_Sample_Data.xlsx")
+        excel_path = os.path.join("data", 'monthly.xlsx')
 
         # Load Data
         try:
@@ -413,73 +443,382 @@ def main():
                 st.session_state['page'] = 'home'
             return
 
+        if 'Period' not in df.columns:
+            st.error("❌ 'Period' column not found in the data.")
+            return
+        
+        Months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+        selected_month = st.selectbox("Select Month", Months)
+
+        # Filter DataFrame based on selected month
+        df = df[df['Period'] == selected_month]
+
+        if df.empty:
+            st.warning(f"No data found for the selected month: {selected_month}")
+            return
+
         # --- KPIs ---
-        st.subheader("📈 Key Weekly Summary Metrics")
+        st.subheader(f"📈 {selected_month} Month Summary Metrics")
         kpi_cols = st.columns(4)
-        kpi_cols[0].metric("📋 Total Weeks", len(df))
-        kpi_cols[1].metric("🧾 Avg Reports/Week", f"{df['Total Reports Analysed'].mean():.1f}")
-        kpi_cols[2].metric("🛒 Avg Acceptance Rate", f"{df['Avg Acceptance Rate (%)'].mean():.1f}%")
-        kpi_cols[3].metric("💰 Avg Scheme Influence", f"{df['Scheme Influence %'].mean():.1f}%")
+        kpi_cols[0].metric("🧾 Total Reports", f"{df['Total Reports Analysed'].iloc[0]}")
+        kpi_cols[1].metric("🛒 Overall Sales Effectiveness", f"{df['Overall Sales Effectiveness'].iloc[0]}")
+        kpi_cols[2].metric("☎️ Total Duration", f"{df['Total Duration'].iloc[0]}")
+        kpi_cols[3].metric("📞 Average Call Duration", f"{df['Average Duration'].iloc[0]}")
 
         st.divider()
 
-        # --- Product Performance Trends ---
-        st.subheader("🧺 Product Performance Trends")
-        fig1 = px.bar(df, x='Period', y=['Total Products Accepted', 'Total Products Rejected'],
-                    barmode='group', title="Accepted vs Rejected Products per Week")
-        st.plotly_chart(fig1, use_container_width=True)
+        # ========================
+        # PRODUCT DISCUSSION TREEMAP
+        # ========================
+        if 'Products Discussed' in df.columns:
+            st.subheader("Product Discussion Frequency")
 
-        # Acceptance rate trend
-        fig2 = px.line(df, x='Period', y='Avg Acceptance Rate (%)',
-                    title="Acceptance Rate Trend", markers=True)
-        st.plotly_chart(fig2, use_container_width=True)
+            try:
+                all_products = []
+                for _, row in df.iterrows():
+                    products = [p.strip() for p in str(row["Products Discussed"]).split(",") if p.strip()]
+                    all_products.extend(products)
+                    print(len(all_products), "\n")
 
-        st.divider()
+                if all_products:
+                    counts = Counter(all_products)
+                    freq_df = pd.DataFrame(counts.items(), columns=['Product', 'Count'])
+                    freq_df = freq_df.sort_values(by='Count', ascending=False)
 
-        # --- Scheme Effectiveness ---
-        st.subheader("🎯 Scheme Effectiveness Overview")
-        fig3 = px.bar(df, x='Period', y='Scheme Influence %', color='Most Effective Scheme Type',
-                    title="Scheme Influence % by Week and Scheme Type")
-        st.plotly_chart(fig3, use_container_width=True)
-
-        fig4 = px.line(df, x='Period', y='Scheme-Driven Buyers (%)',
-                    title="Scheme-Driven Buyers Trend", markers=True)
-        st.plotly_chart(fig4, use_container_width=True)
-
-        st.divider()
-
-        # --- Competitor Insights ---
-        st.subheader("🏁 Competitor Insights")
-        fig5 = px.bar(df, x='Period', y='Competitor Mentions (Total)', color='Most Common Competitor Advantage',
-                    title="Competitor Mentions per Week")
-        st.plotly_chart(fig5, use_container_width=True)
-
-        fig6 = px.line(df, x='Period', y='% Reports Mentioning Online Price Issue',
-                    title="Online Price Issue Mentions (%)", markers=True)
-        st.plotly_chart(fig6, use_container_width=True)
-
-        st.divider()
-
-        # --- Objection Analysis ---
-        st.subheader("🗣️ Objection Analysis")
-        fig7 = px.bar(df, x='Period',
-                    y=['% Pricing Objection', '% Brand Loyalty Objection', '% Product Fit / Stock Concerns'],
-                    barmode='group', title="Customer Objection Breakdown per Week")
-        st.plotly_chart(fig7, use_container_width=True)
+                    fig = px.treemap(
+                        freq_df,
+                        path=[px.Constant("Products Discussed"), 'Product'],
+                        values='Count',
+                        color='Count',
+                        color_continuous_scale='Blues',
+                    )
+                    fig.update_layout(
+                        margin=dict(t=50, l=25, r=25, b=25),
+                        uniformtext=dict(minsize=10, mode='hide')
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No product discussion data found.")
+            except Exception as e:
+                st.warning(f"Could not generate product treemap: {e}")
+        else:
+            st.info("The column 'Products Discussed' was not found in the Excel file.")
 
         st.divider()
 
-        # --- Overall Effectiveness ---
-        st.subheader("⭐ Overall Sales Effectiveness")
-        fig8 = px.line(df, x='Period', y=['Avg Product Promotion Score',
-                                        'Avg Scheme Leverage Score',
-                                        'Avg Competitor Handling Score',
-                                        'Overall Sales Effectiveness'],
-                    title="Performance Score Trends", markers=True)
-        st.plotly_chart(fig8, use_container_width=True)
+        # ========================
+        # COMPETITOR TREEMAP
+        # ========================
+        if 'Competitors' in df.columns:
+            st.subheader("Competitor Mentions Frequency")
 
-    st.title("Sales Call Analysis Tool")
+            try:
+                all_comps = []
+                for _, row in df.iterrows():
+                    comps = [c.strip() for c in str(row["Competitors"]).split(",") if c.strip()]
+                    all_comps.extend(comps)
+                    print(len(all_comps), "\n")
+                if all_comps:
+                    counts = Counter(all_comps)
+                    freq_df = pd.DataFrame(counts.items(), columns=['Competitor', 'Count'])
+                    freq_df = freq_df.sort_values(by='Count', ascending=False)
 
+                    fig = px.treemap(
+                        freq_df,
+                        path=[px.Constant("Competitors"), 'Competitor'],
+                        values='Count',
+                        color='Count',
+                        color_continuous_scale='Blues',
+                    )
+                    fig.update_layout(
+                        margin=dict(t=50, l=25, r=25, b=25),
+                        uniformtext=dict(minsize=10, mode='hide')
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No competitor data found.")
+            except Exception as e:
+                st.warning(f"Could not generate competitor treemap: {e}")
+        else:
+            st.info("The column 'Competitors' was not found in the Excel file.")
+
+        st.divider()
+
+        # ========================
+        # COMPETITOR PRODUCT TREEMAP
+        # ========================
+        if 'Competitor Products' in df.columns:
+            st.subheader("Competitor Product Preference")
+
+            try:
+                all_comp_products = []
+                for _, row in df.iterrows():
+                    products = [p.strip() for p in str(row["Competitor Products"]).split(",") if p.strip()]
+                    all_comp_products.extend(products)
+                    print(len(all_comp_products), "\n")
+                if all_comp_products:
+                    counts = Counter(all_comp_products)
+                    freq_df = pd.DataFrame(counts.items(), columns=['Product', 'Count'])
+                    freq_df = freq_df.sort_values(by='Count', ascending=False)
+
+                    fig = px.treemap(
+                        freq_df,
+                        path=[px.Constant("Competitor Products"), 'Product'],
+                        values='Count',
+                        color='Count',
+                        color_continuous_scale='Blues',
+                    )
+                    fig.update_layout(
+                        margin=dict(t=50, l=25, r=25, b=25),
+                        uniformtext=dict(minsize=10, mode='hide')
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No competitor product data found.")
+            except Exception as e:
+                st.warning(f"Could not generate competitor product treemap: {e}")
+        else:
+            st.info("The column 'Competitor Products' was not found in the Excel file.")
+        
+        st.divider()
+
+        # ========================
+        # PRICING CONCERN TREEMAP
+        # ========================
+        if 'Pricing Concerns' in df.columns:
+            st.subheader("Pricing Concerns")
+
+            try:
+                all_concerns = []
+                for _, row in df.iterrows():
+                    concerns = [p.strip() for p in str(row["Pricing Concerns"]).split(",") if p.strip()]
+                    all_concerns.extend(concerns)
+                    print(len(all_concerns), "\n")
+                if all_concerns:
+                    counts = Counter(all_concerns)
+                    freq_df = pd.DataFrame(counts.items(), columns=['Concern', 'Count'])
+                    freq_df = freq_df.sort_values(by='Count', ascending=False)
+
+                    fig = px.treemap(
+                        freq_df,
+                        path=[px.Constant("Pricing Concerns"), 'Concern'],
+                        values='Count',
+                        color='Count',
+                        color_continuous_scale='Blues',
+                    )
+                    fig.update_layout(
+                        margin=dict(t=50, l=25, r=25, b=25),
+                        uniformtext=dict(minsize=10, mode='hide')
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No pricing concern data found.")
+            except Exception as e:
+                st.warning(f"Could not generate pricing concern treemap: {e}")
+        else:
+            st.info("The column 'Pricing Concerns' was not found in the Excel file.")
+
+    def render_individual_dashboard():
+        st.title("Individual Salesperson Dashboard")
+
+        excel_path = os.path.join("data", 'individually.xlsx')
+
+        # Load Data
+        try:
+            df = pd.read_excel(excel_path)
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            if st.button("⬅️ Back to Home"):
+                st.session_state['page'] = 'home'
+            return
+
+        # Ensure salesperson column exists
+        if 'SalesPerson' not in df.columns:
+            st.error("❌ 'SalesPerson' column not found in the data.")
+            return
+
+        # Dropdown to select salesperson
+        salesperson_names = sorted(df['SalesPerson'].dropna().unique())
+        selected_salesperson = st.selectbox("Select Salesperson", salesperson_names)
+
+        # Filter data for the selected salesperson
+        person_df = df[df['SalesPerson'] == selected_salesperson]
+
+        if person_df.empty:
+            st.warning(f"No data found for salesperson: {selected_salesperson}")
+            return
+
+        # --- KPIs ---
+        st.subheader(f"📈 Monthly Metrics — {selected_salesperson}")
+        kpi_cols = st.columns(4)
+        kpi_cols[0].metric("🧾 Total Reports", f"{person_df['Total Reports Analysed'].iloc[0]}")
+        kpi_cols[1].metric("🛒 Sales Effectiveness", f"{person_df['Overall Sales Effectiveness'].iloc[0]}")
+        kpi_cols[2].metric("☎️ Total Duration", f"{person_df['Total Duration'].iloc[0]}")
+        kpi_cols[3].metric("📞 Average Call Duration", f"{person_df['Average Duration'].iloc[0]}")
+
+        st.divider()
+
+        score_columns = ['Product promotion', 'Scheme leverage', 'Competitor handling', 'Customer psychology understanding']
+        avg_scores = person_df[score_columns].iloc[0].tolist()
+        categories = ['Product Promotion', 'Scheme Leverage', 'Competitor Handling', 'Customer Psychology Understanding']
+
+        # Create Radar chart
+        fig = go.Figure(data=go.Scatterpolar(
+            r=avg_scores + [avg_scores[0]], 
+            theta=categories + [categories[0]],
+            fill='toself',
+            name='Average Monthly Scores',
+            line_color='#1f77b4',
+            fillcolor='rgba(31, 119, 180, 0.3)'
+        ))
+
+        # Layout settings
+        fig.update_layout(
+            polar=dict(radialaxis=dict(visible=True, range=[0,10])),
+            showlegend=False
+        )
+        st.subheader(f"Performance Breakdown")
+        st.plotly_chart(fig, use_container_width=True)
+    
+    def summary_dashboard():
+        st.title("Summary Dashboard")
+        monthly_excel_path = os.path.join("data", 'monthly.xlsx')
+
+        st.divider()
+
+        # Load Data
+        try:
+            m_df = pd.read_excel(monthly_excel_path)
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            if st.button("⬅️ Back to Home"):
+                st.session_state['page'] = 'home'
+            return
+
+        individual_excel_path = os.path.join("data", 'individually.xlsx')
+
+        # Load Data
+        try:
+            p_df = pd.read_excel(individual_excel_path)
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            if st.button("⬅️ Back to Home"):
+                st.session_state['page'] = 'home'
+            return
+        
+        score_column = 'Overall Sales Effectiveness'
+
+        # Categorize scores
+        def categorize_score(score):
+            if score > 8:
+                return 'Well'
+            elif 6 <= score <= 8:
+                return 'Moderate'
+            else:
+                return 'Poor'
+
+        p_df['Performance Category'] = p_df[score_column].apply(categorize_score)
+
+        # Count the number of people in each category
+        category_counts = p_df['Performance Category'].value_counts().reset_index()
+        category_counts.columns = ['Category', 'Count']
+
+        # Create pie chart
+        fig = px.pie(
+            category_counts,
+            names='Category',
+            values='Count',
+            color='Category',
+            color_discrete_map={
+                'Well': '#2ca02c',        # green
+                'Moderate': '#ffbf00',    # yellow
+                'Poor': '#d62728'         # red
+            }
+        )
+        st.subheader("Overall Sales Performance Distribution")
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.divider()
+
+        Months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+        selected_month = st.selectbox("Select Month", Months)
+
+        # Filter DataFrame based on selected month
+        m_df = m_df[m_df['Period'] == selected_month]
+        p_count = c_count = cp_count = pc_count = 0
+
+        if 'Products Discussed' in m_df.columns:
+            try:
+                all_products = []
+                for _, row in m_df.iterrows():
+                    products = [p.strip() for p in str(row["Products Discussed"]).split(",") if p.strip()]
+                    all_products.extend(products)
+                p_count = len(all_products)
+            except Exception as e:
+                st.warning("Couldn't find Product Discussed column")
+        
+        if 'Competitors' in m_df.columns:
+            try:
+                all_competitors = []
+                for _, row in m_df.iterrows():
+                    competitors = [c.strip() for c in str(row["Competitors"]).split(",") if c.strip()]
+                    all_competitors.extend(competitors)
+                c_count = len(all_competitors)
+            except Exception as e:
+                st.warning("Couldn't find Competitors column")
+        
+        if 'Competitor Products' in m_df.columns:
+            try:
+                all_products = []
+                for _, row in m_df.iterrows():
+                    products = [p.strip() for p in str(row["Competitor Products"]).split(",") if p.strip()]
+                    all_products.extend(products)
+                cp_count = len(all_products)
+            except Exception as e:
+                st.warning("Couldn't find Competitor Products column")
+        
+        if 'Pricing Concerns' in m_df.columns:
+            try:
+                all_concerns = []
+                for _, row in m_df.iterrows():
+                    concerns = [c.strip() for c in str(row["Pricing Concerns"]).split(",") if c.strip()]
+                    all_concerns.extend(concerns)
+                pc_count = len(all_concerns)
+            except Exception as e:
+                st.warning("Couldn't find Pricing Concerns column")
+        # --- Summary of discussion counts ---
+        st.subheader("Overall Discussion Summary")
+
+        # Collect the counts into a dataframe
+        summary_data = pd.DataFrame({
+            'Category': ['Products Discussed', 'Competitors', 'Competitor Products', 'Pricing Concerns'],
+            'Count': [p_count, c_count, cp_count, pc_count]
+        })
+
+        # Create a bar chart
+        fig_summary = px.bar(
+            summary_data,
+            x='Category',
+            y='Count',
+            text='Count',
+            color='Count',
+            color_continuous_scale='Blues'
+        )
+
+        # Style adjustments
+        fig_summary.update_traces(textposition='outside')
+        fig_summary.update_layout(
+            xaxis_title="Discussion Category",
+            yaxis_title="Total Mentions",
+            template='simple_white',
+            yaxis=dict(showgrid=True, zeroline=False)
+        )
+
+        # Display in Streamlit
+        st.plotly_chart(fig_summary, use_container_width=True)
+
+        
     # Sidebar for instructions and navigation
     with st.sidebar:
         
@@ -487,15 +826,33 @@ def main():
             st.session_state['page'] = 'home'
             st.rerun()
 
-        if st.button("View Dashboard"):
+        if st.button("View Overall Dashboard"):
             st.session_state['page'] = 'dashboard'
+            st.rerun()
+
+        if st.button("View Individual Dashboard"):
+            st.session_state['page'] = 'individual_dashboard'
+            st.rerun()
+
+        if st.button("Summary Dashboard"):
+            st.session_state['page'] = 'summary_dashboard'
             st.rerun()
 
     # Route pages
     if st.session_state.get('page', 'home') == 'dashboard':
         render_dashboard()
         return
+    
+    if st.session_state.get('page', 'home') == 'individual_dashboard':
+        render_individual_dashboard()
+        return
 
+    if st.session_state.get('page', 'home') == 'summary_dashboard':
+        summary_dashboard()
+        return
+    
+    st.title("Sales Call Analyzer")
+    st.divider()
     # Main content area (home)
     col1, col2 = st.columns([1, 2])
 
@@ -516,8 +873,8 @@ def main():
             st.audio(uploaded_file)
 
             # Analyze button
-            if st.button("🚀 Analyze Audio", type="primary"):
-                with st.spinner("🔄 Analyzing audio with Gemini AI..."):
+            if st.button("Analyze Audio", type="primary"):
+                with st.spinner("🔄 Analyzing audio..."):
                     try:
                         # Read the uploaded file
                         audio_data = uploaded_file.read()
@@ -534,7 +891,7 @@ def main():
                         st.error(f"❌ Error analyzing audio: {str(e)}")
 
     with col2:
-        st.header("📊 Analysis Results")
+        st.header("Analysis Results")
 
         if 'analysis_result' in st.session_state:
 
@@ -544,7 +901,7 @@ def main():
                 st.rerun()
 
             # Display analysis in a nice format
-            st.markdown("### 📈 Sales Performance Analysis")
+            st.markdown("### Sales Performance Analysis")
 
             # Create tabs for better organization
             tab1, tab2 = st.tabs(["📋 Full Report", "💾 Export"])
