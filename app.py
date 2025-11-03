@@ -45,6 +45,7 @@ CRITICAL INSTRUCTION - Brand Identification
 - "Our product" / "Our company's product"
 - "Naga Foods product"
 - If no brand is mentioned, assume it's Naga's
+- Do not repeat products if already mentioned
 
 2. Competitor Brands – ALL other brand names mentioned, including:
 - Nandi, Sankar, Shakti, Aachi, MTR, Britannia, etc.
@@ -149,6 +150,9 @@ For EACH competitor brand mentioned, document separately:
 - Customer's Current Status: Does customer stock it? How much?
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
+- Category:
+    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+      IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 2:**
 - Brand Name: [Next competitor brand]
@@ -156,6 +160,9 @@ For EACH competitor brand mentioned, document separately:
 - Customer's Current Status: Does customer stock it? How much?
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
+- Category:
+    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+      IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 3:** (Continue for each additional competitor brand mentioned until all are covered)
 - Brand Name: [Next competitor brand]
@@ -163,6 +170,9 @@ For EACH competitor brand mentioned, document separately:
 - Customer's Current Status: Does customer stock it? How much?
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
+- Category:
+    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+      IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 B. Customer Buying Psychology
 - What truly drives purchase decisions? (rank by importance)
@@ -342,18 +352,21 @@ A. Competitor Brand Analysis
 - Products: [Categories]
 - Customer's Current Status: [Details]
 - Reasons for Preference: [Detailed reasons]
+- Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
 
 **Brand 2:**
 - Brand Name: [Name]
 - Products: [Categories]
 - Customer's Current Status: [Details]
 - Reasons for Preference: [Detailed reasons]
+- Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
 
 **Brand 3:** (Continue for each additional competitor brand mentioned until all are covered)
 - Brand Name: [Name]
 - Products: [Categories]    
 - Customer's Current Status: [Details]
 - Reasons for Preference: [Detailed reasons]
+- Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
 
 B. Customer Buying Psychology
 - What truly drives purchase decisions: [Ranked list]
@@ -818,32 +831,129 @@ def main():
 
         st.divider()
 
-        # Path to your Excel file
+        # # Path to your Excel file
+        # excel_path = os.path.join("data", "products.xlsx")
+
+        # try:
+        #     df = pd.read_excel(excel_path)
+            
+        #     # Optional: Clean column names
+        #     df.columns = [col.strip().title() for col in df.columns]
+
+        #     st.subheader("Product-wise Competitor Overview")
+
+        #     # Display the dataframe neatly
+        #     st.dataframe(
+        #         df.style.set_properties(**{
+        #             'background-color': '#f9f9f9',
+        #             'color': '#333',
+        #             'border-color': '#ddd'
+        #         }),
+        #         use_container_width=True,
+        #         hide_index=True
+        #     )
+
+        # except Exception as e:
+        #     st.error(f"❌ Failed to load product data: {e}")
+
+    def competitor_performance():
+        st.title("Competitor Performance Analysis")
+
         excel_path = os.path.join("data", "products.xlsx")
 
+        # Load Excel
         try:
             df = pd.read_excel(excel_path)
-            
-            # Optional: Clean column names
-            df.columns = [col.strip().title() for col in df.columns]
-
-            st.subheader("Product-wise Competitor Overview")
-
-            # Display the dataframe neatly
-            st.dataframe(
-                df.style.set_properties(**{
-                    'background-color': '#f9f9f9',
-                    'color': '#333',
-                    'border-color': '#ddd'
-                }),
-                use_container_width=True,
-                hide_index=True
-            )
-
         except Exception as e:
-            st.error(f"❌ Failed to load product data: {e}")
+            st.error(f"❌ Failed to load data file: {e}")
+            return
 
+        # Validate necessary columns
+        required_columns = ['Products', 'Potential Competitors', 'Reason']
+        if not all(col in df.columns for col in required_columns):
+            st.error(f"❌ Missing required columns. Expected: {required_columns}")
+            return
+
+        # Clean and prepare data
+        df = df.dropna(subset=required_columns)
+        for col in required_columns:
+            if df[col].dtype == 'object':
+                df[col] = df[col].astype(str).str.strip()
+
+        # Dropdown to select product
+        selected_product = st.selectbox(
+            "🛒 Select a Product",
+            sorted(df['Products'].unique())
+        )
+
+        # Filter data for selected product
+        filtered_df = df[df['Products'] == selected_product]
+
+        if filtered_df.empty:
+            st.warning("No data available for the selected product.")
+            return
+
+        # Parse comma-separated competitors and reasons
+        expanded_rows = []
         
+        for _, row in filtered_df.iterrows():
+            # Split competitors and reasons by comma
+            competitors = [c.strip() for c in str(row['Potential Competitors']).split(',')]
+            reasons = [r.strip() for r in str(row['Reason']).split(',')]
+            
+            # Create a row for each competitor-reason pair
+            # Match them by index (assuming they correspond positionally)
+            for i, competitor in enumerate(competitors):
+                if i < len(reasons):  # Ensure we have a corresponding reason
+                    expanded_rows.append({
+                        'Potential Competitors': competitor,
+                        'Reason': reasons[i]
+                    })
+
+        # Convert to DataFrame
+        expanded_df = pd.DataFrame(expanded_rows)
+        
+        if expanded_df.empty:
+            st.warning(f"No competitor data available for {selected_product}.")
+            return
+
+        # Count occurrences of each competitor-reason combination
+        count_df = (
+            expanded_df.groupby(['Potential Competitors', 'Reason'])
+            .size()
+            .reset_index(name='Count')
+        )
+
+        # Sort by competitor and count for better visualization
+        count_df = count_df.sort_values(['Potential Competitors', 'Count'], ascending=[True, False])
+
+        # Create stacked bar chart
+        fig = px.bar(
+            count_df,
+            x='Potential Competitors',
+            y='Count',
+            color='Reason',
+            title=f"Competitor Performance for {selected_product}",
+            text='Count',
+            barmode='stack',
+            color_discrete_sequence=px.colors.qualitative.Set3
+        )
+
+        fig.update_traces(textposition='inside', textfont_size=12)
+        
+        fig.update_layout(
+            xaxis_title="Potential Competitors",
+            yaxis_title="Count of Mentions",
+            legend_title="Reasons",
+            plot_bgcolor="#f9f9f9",
+            paper_bgcolor="#ffffff",
+            font=dict(size=13),
+            title_x=0.5,
+            xaxis={'categoryorder': 'total descending'}  # Order by total count
+        )
+
+        st.plotly_chart(fig, use_container_width=True)  
+           
     # Sidebar for instructions and navigation
     with st.sidebar:
         
@@ -863,6 +973,10 @@ def main():
             st.session_state['page'] = 'summary_dashboard'
             st.rerun()
 
+        if st.button("Competitor Performance Dashboard"):
+            st.session_state['page'] = 'competitor_performance'
+            st.rerun()
+
     # Route pages
     if st.session_state.get('page', 'home') == 'dashboard':
         render_dashboard()
@@ -874,6 +988,10 @@ def main():
 
     if st.session_state.get('page', 'home') == 'summary_dashboard':
         summary_dashboard()
+        return
+    
+    if st.session_state.get('page', 'home') == 'competitor_performance':
+        competitor_performance()
         return
     
     st.title("Sales Call Analyzer")
