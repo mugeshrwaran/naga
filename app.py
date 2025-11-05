@@ -49,7 +49,8 @@ CRITICAL INSTRUCTION - Brand Identification
 
 2. Competitor Brands – ALL other brand names mentioned, including:
 - Nandi, Sankar, Shakti, Aachi, MTR, Britannia, etc.
-- Online retailers like Amazon, Flipkart, etc.
+
+3. Online Retailers – Any online platforms mentioned (e.g., Amazon, Flipkart, BigBasket, etc.)
 
 IMPORTANT: DO NOT assume a product is Naga's unless explicitly stated!
 
@@ -174,7 +175,24 @@ For EACH competitor brand mentioned, document separately:
     - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
-B. Customer Buying Psychology
+B. Online Retailers Mentioned
+For EACH online retailer mentioned, document separately:
+
+**Retailer 1:**
+- Name: [e.g., Amazon]
+- Product Range: What products do they offer?
+- Pricing Strategy: How do their prices compare to Naga?
+- Customer Perception: How do customers view this retailer?
+- Unique Selling Points: What makes this retailer stand out?
+
+**Retailer 2:**
+- Name: [Next online retailer]
+- Product Range: What products do they offer?
+- Pricing Strategy: How do their prices compare to Naga?
+- Customer Perception: How do customers view this retailer?
+- Unique Selling Points: What makes this retailer stand out?
+
+C. Customer Buying Psychology
 - What truly drives purchase decisions? (rank by importance)
 - Is it price, brand recognition, customer demand, margins, or something else?
 - Customer's risk tolerance (willing to try new brands?)
@@ -368,7 +386,22 @@ A. Competitor Brand Analysis
 - Reasons for Preference: [Detailed reasons]
 - Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
 
-B. Customer Buying Psychology
+B. Online Retailers Mentioned
+**Retailer 1:**
+- Name: [Name]
+- Product Range: [Details]
+- Pricing Strategy: [Details]
+- Customer Perception: [Details]
+- Unique Selling Points: [Details]
+
+**Retailer 2:** (Continue for each additional online retailer mentioned until all are covered) 
+- Name: [Name]
+- Product Range: [Details]
+- Pricing Strategy: [Details]
+- Customer Perception: [Details]
+- Unique Selling Points: [Details]
+
+C. Customer Buying Psychology
 - What truly drives purchase decisions: [Ranked list]
 - Customer's risk tolerance: [Details]
 - Stock rotation preferences: [Details]
@@ -953,12 +986,68 @@ def main():
         )
 
         st.plotly_chart(fig, use_container_width=True)  
-           
+    
+    def product_performance():
+        st.title("Product Pain-Point Analytics")
+
+        # Load Excel
+        file_path = os.path.join("data", "concerns.xlsx")
+        try:
+            df = pd.read_excel(file_path)
+        except Exception as e:
+            st.error(f"Failed to load file: {e}")
+            return
+        
+        # Validate columns
+        if "Products" not in df.columns or "Concerns" not in df.columns:
+            st.error("Excel must contain 'Product' and 'Concerns' columns")
+            return
+
+        # Product dropdown
+        products = sorted(df["Products"].dropna().unique())
+        selected_product = st.selectbox("Select Product", products)
+
+        # Get concerns list for selected product
+        concerns_str = df[df["Products"] == selected_product]["Concerns"].iloc[0]
+
+        # Split, strip whitespace, and count
+        concerns_list = [c.strip() for c in str(concerns_str).split(",") if c.strip()]
+        concern_counts = Counter(concerns_list)
+
+        # Convert to DataFrame
+        concern_df = pd.DataFrame(list(concern_counts.items()), columns=["Concern", "Count"])
+        concern_df = concern_df.sort_values(by="Count", ascending=False)
+
+        st.subheader(f"Key Concern Areas for {selected_product}")
+
+        # Bar chart
+        fig = px.bar(
+            concern_df,
+            x="Concern",
+            y="Count",
+            text="Count",
+            color="Concern",
+            color_discrete_sequence=px.colors.qualitative.Set2
+        )
+        fig.update_traces(textposition="outside")
+        fig.update_layout(
+            xaxis_title="Concern Type",
+            yaxis_title="Frequency",
+            showlegend=False,
+            template="simple_white"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     # Sidebar for instructions and navigation
     with st.sidebar:
         
         if st.button("Home"):
             st.session_state['page'] = 'home'
+            st.rerun()
+
+        if st.button("Summary Dashboard"):
+            st.session_state['page'] = 'summary_dashboard'
             st.rerun()
 
         if st.button("Sales Performance Dashboard"):
@@ -969,12 +1058,12 @@ def main():
             st.session_state['page'] = 'individual_dashboard'
             st.rerun()
 
-        if st.button("Summary Dashboard"):
-            st.session_state['page'] = 'summary_dashboard'
-            st.rerun()
-
         if st.button("Competitor Performance Dashboard"):
             st.session_state['page'] = 'competitor_performance'
+            st.rerun()
+
+        if st.button("Product Pain-Point Analytics"):
+            st.session_state['page'] = 'product_performance'
             st.rerun()
 
     # Route pages
@@ -992,6 +1081,10 @@ def main():
     
     if st.session_state.get('page', 'home') == 'competitor_performance':
         competitor_performance()
+        return
+    
+    if st.session_state.get('page', 'home') == 'product_performance':
+        product_performance()
         return
     
     st.title("Sales Call Analyzer")
@@ -1106,7 +1199,10 @@ def main():
                 doc_buffer.seek(0)
 
                 # Remove file extension from uploaded file name for the report
-                base_filename = os.path.splitext(uploaded_file.name)[0]
+                if uploaded_file is not None:
+                    base_filename = os.path.splitext(uploaded_file.name)[0]
+                else:
+                    base_filename = "analysis"
                 st.download_button(
                     label="📄 Download Analysis Report (Word)",
                     data=doc_buffer.getvalue(),
