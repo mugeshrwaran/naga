@@ -25,7 +25,8 @@ def analyze_audio_with_gemini(audio_file):
     # )
     
     model = genai.GenerativeModel(
-        "gemini-2.5-pro",
+        # "gemini-2.5-pro",
+        "gemini-2.0-flash"
         # generation_config=generation_config
     )
     

@@ -1,10 +1,9 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 import google.generativeai as genai
 import dotenv
+import requests
 import os
-import tempfile
-import json
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -12,15 +11,15 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 app = FastAPI(
     title="Sales Call Audio Analysis API",
-    description="Upload a sales call audio file to analyze with Gemini and get structured JSON report",
-    version="1.0.0"
+    description="Send a public audio file URL (e.g., Salesforce file link) for Gemini analysis.",
+    version="3.0.0"
 )
 
 # ===== Gemini Model Setup =====
 # MODEL_NAME = "gemini-2.5-pro"
 MODEL_NAME = "gemini-2.0-flash"
 
-# ===== Prompt Definition (from your Streamlit code) =====
+# ===== Prompt Definition =====
 ANALYSIS_PROMPT = """
 CONFIGURATION
 
@@ -447,24 +446,17 @@ CRITICAL REMINDERS
 - FOLLOW THE EXACT FORMAT ABOVE - DO NOT DEVIATE TO PARAGRAPH STYLE
 """
 
-def analyze_audio_with_gemini(audio_bytes: bytes) -> str:
-    """Send audio + prompt to Gemini and return text output"""
+# ===== Gemini Helper Functions =====
+def analyze_audio_with_gemini(audio_bytes: bytes, mime_type: str = "audio/mp3") -> str:
     model = genai.GenerativeModel(MODEL_NAME)
-
     response = model.generate_content([
         ANALYSIS_PROMPT,
-        {"mime_type": "audio/mp3", "data": audio_bytes}
+        {"mime_type": mime_type, "data": audio_bytes}
     ])
-
     return response.text
 
 
 def convert_analysis_to_json(analysis_text: str) -> dict:
-    """
-    Convert the structured markdown-like Gemini output
-    into JSON (basic parsing using section headers).
-    """
-
     sections = {}
     current_section = None
     lines = analysis_text.split("\n")
@@ -474,42 +466,56 @@ def convert_analysis_to_json(analysis_text: str) -> dict:
         if not line:
             continue
 
-        # Detect new section headers (start with #)
         if line.startswith("#"):
             current_section = line.lstrip("#").strip()
             sections[current_section] = []
-        else:
-            if current_section:
-                sections[current_section].append(line)
+        elif current_section:
+            sections[current_section].append(line)
 
-    # Join section text blocks
-    structured_json = {k: "\n".join(v) for k, v in sections.items()}
-    return structured_json
+    return {k: "\n".join(v) for k, v in sections.items()}
 
 
+# ===== API Endpoint =====
 @app.post("/analyze-audio/")
-async def analyze_audio(file: UploadFile = File(...)):
+async def analyze_audio_from_url(request: Request):
     """
-    Upload a sales conversation audio file, analyze with Gemini, return structured report JSON.
+    Accepts a JSON body like:
+    {
+        "file_url": "https://your.salesforce.public.link/audio.mp3"
+    }
     """
-
-    # Validate file type
-    allowed_types = ["audio/mp3", "audio/mpeg", "audio/wav", "audio/mp4", "audio/m4a", "audio/ogg"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Unsupported file type")
-
     try:
-        # Read audio bytes
-        audio_bytes = await file.read()
+        data = await request.json()
+        file_url = data.get("file_url")
 
-        # Analyze with Gemini
-        analysis_text = analyze_audio_with_gemini(audio_bytes)
+        if not file_url:
+            raise HTTPException(status_code=400, detail="Missing 'file_url' in request body")
 
-        # Convert structured text to JSON
+        # Step 1️⃣: Download the audio file from URL
+        response = requests.get(file_url, stream=True)
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to download file (HTTP {response.status_code})"
+            )
+
+        audio_bytes = response.content
+
+        # Step 2️⃣: Detect MIME type if available
+        mime_type = response.headers.get("Content-Type", "audio/mp3")
+
+        # Step 3️⃣: Analyze with Gemini
+        analysis_text = analyze_audio_with_gemini(audio_bytes, mime_type=mime_type)
+
+        # Step 4️⃣: Convert text to structured JSON
         report_json = convert_analysis_to_json(analysis_text)
 
         return JSONResponse(
-            content={"status": "success", "filename": file.filename, "report": report_json},
+            content={
+                "status": "success",
+                "source_url": file_url,
+                "report": report_json
+            },
             status_code=200
         )
 
@@ -519,4 +525,4 @@ async def analyze_audio(file: UploadFile = File(...)):
 
 @app.get("/")
 def root():
-    return {"message": "Sales Call Audio Analysis API is running!"}
+    return {"message": "Sales Call Audio Analysis API (URL mode) is running!"}
