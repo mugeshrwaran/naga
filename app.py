@@ -711,14 +711,18 @@ def main():
             theta=categories + [categories[0]],
             fill='toself',
             name='Average Monthly Scores',
-            line_color='#1f77b4',
-            fillcolor='rgba(31, 119, 180, 0.3)'
+            line_color="#6873f9",
+            fillcolor='rgba(164, 173, 248)'
         ))
 
         # Layout settings
         fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[0,10])),
-            showlegend=False
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0,10]), bgcolor='#e5ecf6',
+                angularaxis=dict(tickfont=dict(size=16))
+                ),
+            showlegend=False,
+            height = 600
         )
         st.subheader(f"Performance Breakdown")
         st.plotly_chart(fig, use_container_width=True)
@@ -777,8 +781,23 @@ def main():
                 'Well': '#2ca02c',        # green
                 'Moderate': '#ffbf00',    # yellow
                 'Poor': '#d62728'         # red
-            }
+            },
+            height = 600
         )
+
+        # 1. Increase the font size of the labels displayed *on* the pie slices
+        fig.update_traces(
+            textfont_size=18, # Adjust this value (e.g., 14, 18, 20) as needed
+            marker=dict(line=dict(color='#000000', width=1)) # Optional: adds a slight border for visibility
+        )
+
+        # 2. Optional: Increase the font size of the *legend* entries
+        fig.update_layout(
+            legend=dict(
+                font=dict(size=14) # Adjust this value as needed
+            )
+        )
+
         st.subheader("Overall Sales Performance Distribution")
         # Display the chart
         st.plotly_chart(fig, use_container_width=True)
@@ -848,16 +867,18 @@ def main():
             text='Count',
             color='Count',
             color_continuous_scale='Bluered',
-
+            height = 500
         )
 
         # Style adjustments
-        fig_summary.update_traces(textposition='outside')
+        fig_summary.update_traces(textposition='outside', textfont_size=15)
         fig_summary.update_layout(
             xaxis_title="Discussion Category",
             yaxis_title="Total Mentions",
             template='simple_white',
-            yaxis=dict(showgrid=True, zeroline=False)
+            yaxis=dict(showgrid=True, zeroline=False, title_font=dict(size=16), tickfont=dict(size=14)), 
+            font = dict(size=14),
+            xaxis = dict(title_font=dict(size=16), tickfont=dict(size=14)),
         )
 
         # Display in Streamlit
@@ -970,10 +991,11 @@ def main():
             title=f"Competitor Performance for {selected_product}",
             text='Count',
             barmode='stack',
-            color_discrete_sequence=px.colors.qualitative.Set3
+            color_discrete_sequence=px.colors.qualitative.Set3, 
+            height=500
         )
 
-        fig.update_traces(textposition='inside', textfont_size=12)
+        fig.update_traces(textposition='inside', textfont_size=15)
         
         fig.update_layout(
             xaxis_title="Potential Competitors",
@@ -983,7 +1005,8 @@ def main():
             paper_bgcolor="#ffffff",
             font=dict(size=13),
             title_x=0.5,
-            xaxis={'categoryorder': 'total descending'}  # Order by total count
+            xaxis = dict(title_font=dict(size=16), tickfont=dict(size=14), categoryorder='total descending'),
+            yaxis = dict(title_font=dict(size=16), tickfont=dict(size=14)),
         )
 
         st.plotly_chart(fig, use_container_width=True)  
@@ -1028,14 +1051,17 @@ def main():
             y="Count",
             text="Count",
             color="Concern",
-            color_discrete_sequence=px.colors.qualitative.Set2
+            color_discrete_sequence=px.colors.qualitative.Set2, 
+            height=500
         )
-        fig.update_traces(textposition="outside")
+        fig.update_traces(textposition="outside", textfont_size=15)
         fig.update_layout(
             xaxis_title="Concern Type",
             yaxis_title="Frequency",
-            showlegend=False,
-            template="simple_white"
+            showlegend=True,
+            template="simple_white",
+            xaxis = dict(title_font=dict(size=16), tickfont=dict(size=14)),
+            yaxis = dict(title_font=dict(size=16), tickfont=dict(size=14))
         )
 
         st.plotly_chart(fig, use_container_width=True)
