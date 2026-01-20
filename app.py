@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import google.generativeai as genai
 import dotenv
@@ -8,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
+from jsontostring import convert_sales_report_to_string
 
 
 # Load environment variables
@@ -15,20 +17,14 @@ dotenv.load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def analyze_audio_with_gemini(audio_file):
-    # Configure generation parameters for consistency
-    # generation_config = genai.types.GenerationConfig(
-    #     temperature=0.0,  # Low temperature for more consistent responses
-    #     top_p=0.1,        # Reduce randomness in token selection
-    #     top_k=1,         # Limit vocabulary choices
-    #     max_output_tokens=4000,
-    #     candidate_count=1
-    # )
+    # Configure generation parameters for consistency and JSON mode
+    generation_config = {
+        "response_mime_type": "application/json"
+    }
     
     model = genai.GenerativeModel(
-        # "gemini-2.5-pro"
-        "gemini-2.5-flash"
-        # "gemini-3-flash"
-        # generation_config=generation_config
+        "gemini-2.5-pro",
+        generation_config=generation_config
     )
     
     # Combined prompt for direct audio analysis
@@ -62,12 +58,12 @@ SPEAKER CONTEXT RULES (CRITICAL)
  
 Before mapping brands and products, determine who is speaking:
  
-- If the **Sales Representative** mentions a product, assume it is **Naga’s product** unless they clearly say it’s a competitor.
+- If the **Sales Representative** mentions a product, assume it is **Naga's product** unless they clearly say it's a competitor.
 - If the **Customer (store owner)** mentions a product or brand name, assume it is a **competitor brand**, unless the Sales Rep later confirms it belongs to Naga.
 - If both speakers mention the same product name, assign ownership based on context and tone:
-  - If Sales Rep is promoting or explaining → Naga’s product.
+  - If Sales Rep is promoting or explaining → Naga's product.
   - If Customer is comparing or complaining → Competitor product.
-- When uncertain, label it as **“Ambiguous – Needs context”** and do not count it in Naga product analysis.
+- When uncertain, label it as **"Ambiguous – Needs context"** and do not count it in Naga product analysis.
 ------------------------------------------------------------
 
 Brand & Product Mapping (Complete this FIRST)
@@ -145,11 +141,44 @@ CRITICAL ANALYSIS REQUIRED - Look for these indicators:
 4. Competitive Intelligence & Customer Psychology
 
 A. Competitor Brand Analysis
-For EACH competitor brand mentioned, document separately:
+For EACH competitor brand and product mentioned, document separately:
+    for example a same brand may have multiple products mentioned in the conversation, DONT combine them and document each product separately and Multiple brands may be mentioned for same product also, DONT combine them and document each brand separately.
 
 **Brand 1:**
 - Brand Name: [e.g., Shakti, Nandi, etc.]
-- Products: Which product categories?
+- Product: Which product categories?
+- Customer's Current Status: Does customer stock it? How much?
+- Reasons for Preference: Why does customer prefer this brand than Naga in detail?
+    - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
+- Category:
+    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+      IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
+
+**Brand 1:**
+- Brand Name: [Same Brand as Previous]
+- Product: Which product categories? (Another product of same brand)
+- Customer's Current Status: Does customer stock it? How much?
+- Reasons for Preference: Why does customer prefer this brand than Naga in detail?
+    - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
+- Category:
+    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+      IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
+
+**Brand 2:** (Continue for each additional competitor brand mentioned until all are covered)
+- Brand Name: [Next competitor brand]
+- Product: Which product categories?
+- Customer's Current Status: Does customer stock it? How much?
+- Reasons for Preference: Why does customer prefer this brand than Naga in detail?
+    - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
+- Category:
+    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+      IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
+
+Example:
+
+**Brand 1:**
+- Brand Name: Shakti
+- Product: Gothumai Maavu (Wheat Flour)
 - Customer's Current Status: Does customer stock it? How much?
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
@@ -158,8 +187,8 @@ For EACH competitor brand mentioned, document separately:
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 2:**
-- Brand Name: [Next competitor brand]
-- Products: Which product categories?
+- Brand Name: Shakti
+- Product: Rava Maavu
 - Customer's Current Status: Does customer stock it? How much?
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
@@ -167,9 +196,9 @@ For EACH competitor brand mentioned, document separately:
     - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
-**Brand 3:** (Continue for each additional competitor brand mentioned until all are covered)
-- Brand Name: [Next competitor brand]
-- Products: Which product categories?
+**Brand 3:**
+- Brand Name: Nandi
+- Product: Rava Maavu
 - Customer's Current Status: Does customer stock it? How much?
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
@@ -315,147 +344,173 @@ For RECOMMENDATIONS: Base suggestions on specific gaps identified in the convers
 
 ------------------------------------------------------------
 
-MANDATORY OUTPUT FORMAT - FOLLOW THIS EXACT STRUCTURE
+MANDATORY JSON OUTPUT FORMAT - FOLLOW THIS EXACT STRUCTURE
 
-You MUST follow this precise format. Do NOT write in paragraph style.
+You MUST return your response as a valid JSON object following this exact structure.
+This structure preserves ALL headings and subheadings from the analysis report:
 
-**TEMPLATE STRUCTURE:**
+```json
+{
+  "brand_product_mapping": {
+    "naga_brand_products": {
+      "products_list": []
+    },
+    "competitor_brands_mentioned": []
+  },
+  "conversation_summary": {
+    "summary_points": []
+  },
+  "sales_matrix": {
+    "naga_products_performance": {
+      "naga_products_promoted": "",
+      "volume_pushed_upselling": "",
+      "schemes_offered": {
+        "description": "",
+        "scheme_details": []
+      },
+      "cross_selling_within_naga_portfolio": "",
+      "acceptance_rejection": {
+        "accepted": [],
+        "rejected": []
+      }
+    },
+    "sales_barriers": {
+      "objections_raised": "",
+      "competitor_advantages_cited": ""
+    }
+  },
+  "customer_buying_patterns": {
+    "regularly_buying_products": {
+      "description": "Customer commits to buy BEFORE schemes are explained OR shows clear intent to buy regardless of schemes",
+      "products": []
+    },
+    "scheme_based_orders": {
+      "description": "Customer commits to buy ONLY BECAUSE schemes influenced their decision",
+      "products": []
+    }
+  },
+  "competitive_intelligence_and_customer_psychology": {
+    "competitor_brand_analysis": [
+      {
+        "brand_name": "",
+        "product": "",
+        "customer_current_status": "",
+        "reasons_for_preference": "",
+        "category": ""
+      }
+    ],
+    "online_retailers_mentioned": [
+      {
+        "name": "",
+        "product_range": "",
+        "pricing_strategy": "",
+        "customer_perception": "",
+        "unique_selling_points": ""
+      }
+    ],
+    "customer_buying_psychology": {
+      "purchase_decision_drivers_ranked": [],
+      "risk_tolerance": "",
+      "stock_rotation_preferences": "",
+      "openness_to_switching": "",
+      "buying_behaviour": ""
+    }
+  },
+  "salesperson_effectiveness_score": {
+    "scores": {
+      "product_promotion": {
+        "score": 0,
+        "weight_percentage": 30,
+        "justification": ""
+      },
+      "scheme_leverage": {
+        "score": 0,
+        "weight_percentage": 20,
+        "justification": ""
+      },
+      "competitor_handling": {
+        "score": 0,
+        "weight_percentage": 25,
+        "justification": "",
+        "is_na": false
+      },
+      "customer_psychology_understanding": {
+        "score": 0,
+        "weight_percentage": 25,
+        "justification": ""
+      }
+    },
+    "final_score_calculation": {
+      "formula": "",
+      "final_score": 0
+    }
+  },
+  "salesperson_ability_analysis": "",
+  "product_price_analysis": {
+    "summary": "",
+    "high_price_products": [
+      {
+        "product": "",
+        "price_point": "",
+        "customer_exact_concerns": ""
+      }
+    ]
+  },
+  "salesperson_strengths": [],
+  "areas_for_improvement": []
+}
+```
 
-# Brand & Product Mapping
+CRITICAL JSON FORMATTING RULES:
 
-A. Naga Brand Products
-- [Product 1]
-- [Product 2]
-- [Product 3]
+1. **Return ONLY the JSON object** - no markdown code blocks (no ```json), no explanatory text before or after
+2. **Ensure all strings are properly escaped** - use \" for quotes inside strings
+3. **Use arrays ([])** for all lists of items
+4. **Use empty strings ("")** for text fields with no data
+5. **Use empty arrays ([])** for list fields with no data
+6. **All numeric scores must be actual numbers**, not strings (e.g., 9 not "9")
+7. **Maintain proper JSON syntax** - no trailing commas, proper quotation marks
+8. **For the "category" field** in competitor analysis, use ONLY these exact values:
+   - "Price Concern"
+   - "Discount Concern"
+   - "Product Variety"
+   - "Product Package Size"
+   - "Other factors"
+9. **For boolean fields** like "is_na", use true/false (not "true"/"false")
+10. **Product lists should be detailed strings or objects** with full context as shown in the example document
 
-B. Competitor Brands Mentioned
-- [Brand Name]: [Product categories]
+FIELD MAPPING GUIDE (Ensure all content fits properly):
 
-------------------------------------------------------------
+**brand_product_mapping.naga_brand_products.products_list**: 
+- Include ALL Naga products mentioned with sizes/variants (e.g., "Rava (200g, 500g, 1kg)")
 
-# 1. Conversation Summary
-- [Summary point 1]
-- [Summary point 2]
-- [Summary point 3]
+**competitor_brands_mentioned**: 
+- List each competitor with context (e.g., "MTR: Mentioned briefly by the customer to someone else in the store, not as a direct competitor in the conversation")
 
-------------------------------------------------------------
+**sales_matrix.naga_products_performance.schemes_offered.scheme_details**:
+- Array of objects, each with product name and scheme details
+- Example: [{"product": "Rava (500g & 1kg bags)", "scheme": "Get 6 packets of 500g Atta free"}]
 
-# 2. Sales Matrix
+**sales_matrix.naga_products_performance.acceptance_rejection**:
+- "accepted": Array of products with quantities (e.g., "Rava (1 bag of 1kg, 1 bag of 500g)")
+- "rejected": Array of rejected products with reasons if available
 
-**Naga Products Performance**
-- Naga products promoted: [Details]
-- Volume pushed / upselling: [Details]
-- Schemes offered: [Details with specifics]
-- Cross-selling within Naga portfolio: [Details]
-- Acceptance/Rejection: [Details]
+**customer_buying_patterns**: 
+- Each product entry should include the reasoning/evidence for categorization
 
-**Sales Barriers**
-- Objections raised: [Details]
-- Competitor advantages cited: [Details]
-
-------------------------------------------------------------
-
-# 3. Customer Buying Patterns
-
-A. Regularly buying products (Customer commits to buy BEFORE schemes OR shows clear intent regardless of schemes)
-    - [Products List - immediate interest/commitment or clear intent to buy regardless]
-    
-B. Scheme Based Orders (Customer commits to buy ONLY BECAUSE schemes influenced their decision)
-    - [Products List - hesitation turned to purchase, or quantity increased due to schemes]------------------------------------------------------------
-
-# 4. Competitive Intelligence & Customer Psychology
-
-A. Competitor Brand Analysis
-
-**Brand 1:**
-- Brand Name: [Name]
-- Products: [Categories]
-- Customer's Current Status: [Details]
-- Reasons for Preference: [Detailed reasons]
-- Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
-
-**Brand 2:**
-- Brand Name: [Name]
-- Products: [Categories]
-- Customer's Current Status: [Details]
-- Reasons for Preference: [Detailed reasons]
-- Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
-
-**Brand 3:** (Continue for each additional competitor brand mentioned until all are covered)
-- Brand Name: [Name]
-- Products: [Categories]    
-- Customer's Current Status: [Details]
-- Reasons for Preference: [Detailed reasons]
-- Category: Price Concern / Discount Concern / Product Variety / Product Package Size / Other factors
-
-B. Online Retailers Mentioned
-**Retailer 1:**
-- Name: [Name]
-- Product Range: [Details]
-- Pricing Strategy: [Details]
-- Customer Perception: [Details]
-- Unique Selling Points: [Details]
-
-**Retailer 2:** (Continue for each additional online retailer mentioned until all are covered) 
-- Name: [Name]
-- Product Range: [Details]
-- Pricing Strategy: [Details]
-- Customer Perception: [Details]
-- Unique Selling Points: [Details]
-
-C. Customer Buying Psychology
-- What truly drives purchase decisions: [Ranked list]
-- Customer's risk tolerance: [Details]
-- Stock rotation preferences: [Details]
-- Openness to switching brands: [Details]
-- How is the customer buying behaviour: [Details]
-
-------------------------------------------------------------
-
-# 5. Salesperson Effectiveness Score
-
-**Product promotion (30% weight):** _/10
-**Scheme leverage (20% weight):** _/10
-**Competitor handling (25% weight):** _/10
-**Customer psychology understanding (25% weight):** _/10
-
-**Final Score Calculation:**
-[Calculation formula] = _/10
-
-------------------------------------------------------------
-
-# 6. Salesperson Ability Analysis
-- [Summary]
-
-------------------------------------------------------------
-
-# 7. Product Price Analysis
-- [Summary]
-
-------------------------------------------------------------
-
-# 8. Salesperson Strengths
-- [Strength 1]
-- [Strength 2]
-- [Strength 3]
-
-------------------------------------------------------------
-
-# 9. Areas for Improvement
-- [Improvement 1]
-- [Improvement 2]
-- [Improvement 3]
-
-------------------------------------------------------------
+**salesperson_effectiveness_score.scores.competitor_handling.is_na**:
+- Set to true if no competitors were discussed, false otherwise
+- If true, explain in justification field
 
 CRITICAL REMINDERS
 
 - DO NOT assume any brand is Naga unless explicitly stated
-- DO NOT group competitors as "other brands" – name each specifically
+- DO NOT group competitors as "other brands" – name each specifically in the JSON array
 - DO capture both stated reasons AND underlying psychology
 - DO identify non-price factors driving brand preference
 - DO note when customer prefers competitor despite Naga being cheaper/better
-- FOLLOW THE EXACT FORMAT ABOVE - DO NOT DEVIATE TO PARAGRAPH STYLE
+- **RETURN ONLY VALID JSON - NO MARKDOWN CODE BLOCKS, NO ADDITIONAL TEXT OR FORMATTING**
+- **START your response directly with the opening brace { and end with the closing brace }**
 """
     
     response = model.generate_content([
@@ -1145,9 +1200,25 @@ def main():
 
                         # Analyze with Gemini
                         analysis = analyze_audio_with_gemini(audio_data)
+                        print("Analysis Result ::::::", analysis)
 
-                        # Store in session state
-                        st.session_state['analysis_result'] = analysis
+                        # Clean the response if it contains markdown code blocks
+                        clean_analysis = analysis.strip()
+                        if clean_analysis.startswith("```json"):
+                            clean_analysis = clean_analysis[7:]
+                        elif clean_analysis.startswith("```"):
+                            clean_analysis = clean_analysis[3:]
+                        if clean_analysis.endswith("```"):
+                            clean_analysis = clean_analysis[:-3]
+                        clean_analysis = clean_analysis.strip()
+
+                        if not clean_analysis:
+                             st.error("The model returned an empty response.")
+                        else:
+                             report = convert_sales_report_to_string(json.loads(clean_analysis))
+                             
+                             # Store in session state
+                             st.session_state['analysis_result'] = report
 
                         st.success("✅ Analysis completed!")
 
