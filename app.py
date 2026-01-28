@@ -25,7 +25,7 @@ st.markdown(
 """
 <style>
     header[data-testid="stHeader"]::after {
-        content: "Naga";
+        content: "Naga Foods";
         font-size: 2.5rem;
         font-weight: 650;
         color: var(--text-color);
@@ -1176,9 +1176,9 @@ def main():
             st.session_state['page'] = 'home'
             st.rerun()
 
-        if st.button("📋 Summary Dashboard", width="stretch"):
-            st.session_state['page'] = 'summary_dashboard'
-            st.rerun()
+        # if st.button("📋 Summary Dashboard", width="stretch"):
+        #     st.session_state['page'] = 'summary_dashboard'
+        #     st.rerun()
 
         if st.button("💰 Sales Performance Dashboard", width="stretch"):
             st.session_state['page'] = 'dashboard'
@@ -1188,9 +1188,9 @@ def main():
             st.session_state['page'] = 'individual_dashboard'
             st.rerun()
 
-        if st.button("🎯 Competitor Performance Dashboard", width="stretch"):
-            st.session_state['page'] = 'competitor_performance'
-            st.rerun()
+        # if st.button("🎯 Competitor Performance Dashboard", width="stretch"):
+        #     st.session_state['page'] = 'competitor_performance'
+        #     st.rerun()
 
         if st.button("⚠️ Product Pain-Point Analytics", width="stretch"):
             st.session_state['page'] = 'product_performance'
@@ -1205,13 +1205,13 @@ def main():
         render_individual_dashboard()
         return
 
-    if st.session_state.get('page', 'home') == 'summary_dashboard':
-        summary_dashboard()
-        return
+    # if st.session_state.get('page', 'home') == 'summary_dashboard':
+    #     summary_dashboard()
+    #     return
     
-    if st.session_state.get('page', 'home') == 'competitor_performance':
-        competitor_performance()
-        return
+    # if st.session_state.get('page', 'home') == 'competitor_performance':
+    #     competitor_performance()
+    #     return
     
     if st.session_state.get('page', 'home') == 'product_performance':
         product_performance()
