@@ -12,6 +12,46 @@ from collections import Counter
 from jsontostring import convert_sales_report_to_string
 
 
+def parse_explicit_counts(data_series):
+    """
+    Parses a pandas Series of strings that may contain comma-separated items
+    with explicit counts like 'Item - 100' or 'Item – 50'.
+    Returns a dictionary of aggregated {item_name: count}.
+    """
+    total_counts = {}
+    for value in data_series:
+        if pd.isna(value) or str(value).strip().lower() == 'nan':
+            continue
+        
+        # Split by comma for multiple items in one cell
+        items_raw = [i.strip() for i in str(value).split(",") if i.strip()]
+        
+        for raw_item in items_raw:
+            # Check for delimiters like '–' (long dash) or '-' (standard dash)
+            if "–" in raw_item:
+                parts = raw_item.split("–")
+            elif "-" in raw_item:
+                parts = raw_item.split("-")
+            else:
+                parts = [raw_item]
+            
+            name = parts[0].strip()
+            
+            # Extract count if present, otherwise default to 1
+            if len(parts) > 1:
+                try:
+                    # Remove any non-numeric chars before converting
+                    count_str = "".join(filter(str.isdigit, parts[1]))
+                    count = int(count_str) if count_str else 1
+                except ValueError:
+                    count = 1
+            else:
+                count = 1
+            
+            total_counts[name] = total_counts.get(name, 0) + count
+    return total_counts
+
+
 # Load environment variables
 dotenv.load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -598,13 +638,9 @@ def main():
             st.subheader("Naga Product Mention Rate")
 
             try:
-                all_products = []
-                for _, row in df.iterrows():
-                    products = [p.strip() for p in str(row["Products Discussed"]).split(",") if p.strip()]
-                    all_products.extend(products)
+                counts = parse_explicit_counts(df["Products Discussed"])
 
-                if all_products:
-                    counts = Counter(all_products)
+                if counts:
                     freq_df = pd.DataFrame(counts.items(), columns=['Product', 'Count'])
                     freq_df = freq_df.sort_values(by='Count', ascending=False)
 
@@ -636,12 +672,9 @@ def main():
             st.subheader("Competitor Mention Rate")
 
             try:
-                all_comps = []
-                for _, row in df.iterrows():
-                    comps = [c.strip() for c in str(row["Competitors"]).split(",") if c.strip()]
-                    all_comps.extend(comps)
-                if all_comps:
-                    counts = Counter(all_comps)
+                counts = parse_explicit_counts(df["Competitors"])
+                
+                if counts:
                     freq_df = pd.DataFrame(counts.items(), columns=['Competitor', 'Count'])
                     freq_df = freq_df.sort_values(by='Count', ascending=False)
 
@@ -673,12 +706,9 @@ def main():
             st.subheader("Competitor Product Preference")
 
             try:
-                all_comp_products = []
-                for _, row in df.iterrows():
-                    products = [p.strip() for p in str(row["Competitor Products"]).split(",") if p.strip()]
-                    all_comp_products.extend(products)
-                if all_comp_products:
-                    counts = Counter(all_comp_products)
+                counts = parse_explicit_counts(df["Competitor Products"])
+                
+                if counts:
                     freq_df = pd.DataFrame(counts.items(), columns=['Product', 'Count'])
                     freq_df = freq_df.sort_values(by='Count', ascending=False)
 
@@ -916,43 +946,31 @@ def main():
 
         if 'Products Discussed' in m_df.columns:
             try:
-                all_products = []
-                for _, row in m_df.iterrows():
-                    products = [p.strip() for p in str(row["Products Discussed"]).split(",") if p.strip()]
-                    all_products.extend(products)
-                p_count = len(all_products)
+                counts = parse_explicit_counts(m_df["Products Discussed"])
+                p_count = sum(counts.values())
             except Exception as e:
-                st.warning("Couldn't find Product Discussed column")
+                st.warning("Couldn't process Product Discussed column")
         
         if 'Competitors' in m_df.columns:
             try:
-                all_competitors = []
-                for _, row in m_df.iterrows():
-                    competitors = [c.strip() for c in str(row["Competitors"]).split(",") if c.strip()]
-                    all_competitors.extend(competitors)
-                c_count = len(all_competitors)
+                counts = parse_explicit_counts(m_df["Competitors"])
+                c_count = sum(counts.values())
             except Exception as e:
-                st.warning("Couldn't find Competitors column")
+                st.warning("Couldn't process Competitors column")
         
         if 'Competitor Products' in m_df.columns:
             try:
-                all_products = []
-                for _, row in m_df.iterrows():
-                    products = [p.strip() for p in str(row["Competitor Products"]).split(",") if p.strip()]
-                    all_products.extend(products)
-                cp_count = len(all_products)
+                counts = parse_explicit_counts(m_df["Competitor Products"])
+                cp_count = sum(counts.values())
             except Exception as e:
-                st.warning("Couldn't find Competitor Products column")
+                st.warning("Couldn't process Competitor Products column")
         
         if 'Pricing Concerns' in m_df.columns:
             try:
-                all_concerns = []
-                for _, row in m_df.iterrows():
-                    concerns = [c.strip() for c in str(row["Pricing Concerns"]).split(",") if c.strip()]
-                    all_concerns.extend(concerns)
-                pc_count = len(all_concerns)
+                counts = parse_explicit_counts(m_df["Pricing Concerns"])
+                pc_count = sum(counts.values())
             except Exception as e:
-                st.warning("Couldn't find Pricing Concerns column")
+                st.warning("Couldn't process Pricing Concerns column")
         # --- Summary of discussion counts ---
         st.subheader("Overall Discussion Summary")
 
@@ -1135,11 +1153,8 @@ def main():
         selected_product = st.selectbox("Select Product", products)
 
         # Get concerns list for selected product
-        concerns_str = df[df["Products"] == selected_product]["Concerns"].iloc[0]
-
-        # Split, strip whitespace, and count
-        concerns_list = [c.strip() for c in str(concerns_str).split(",") if c.strip()]
-        concern_counts = Counter(concerns_list)
+        concerns_series = df[df["Products"] == selected_product]["Concerns"]
+        concern_counts = parse_explicit_counts(concerns_series)
 
         # Convert to DataFrame
         concern_df = pd.DataFrame(list(concern_counts.items()), columns=["Concern", "Count"])
@@ -1155,7 +1170,7 @@ def main():
             text="Count",
             color="Concern",
             color_discrete_sequence=px.colors.qualitative.Set2, 
-            height=500
+            height=600
         )
         fig.update_traces(textposition="outside", textfont_size=15)
         fig.update_layout(
@@ -1180,7 +1195,7 @@ def main():
         #     st.session_state['page'] = 'summary_dashboard'
         #     st.rerun()
 
-        if st.button("💰 Sales Performance Dashboard", width="stretch"):
+        if st.button("💰 Sales Performance", width="stretch"):
             st.session_state['page'] = 'dashboard'
             st.rerun()
 
