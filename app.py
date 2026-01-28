@@ -16,6 +16,27 @@ from jsontostring import convert_sales_report_to_string
 dotenv.load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+st.logo(
+    "Naga E-Store.png",
+    size="large",
+)
+
+st.markdown(
+"""
+<style>
+    header[data-testid="stHeader"]::after {
+        content: "Naga";
+        font-size: 2.5rem;
+        font-weight: 650;
+        color: var(--text-color);
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+</style>
+"""
+, unsafe_allow_html=True)
+
 def analyze_audio_with_gemini(audio_file):
     # Configure generation parameters for consistency and JSON mode
     generation_config = {
@@ -151,7 +172,7 @@ For EACH competitor brand and product mentioned, document separately:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 - Category:
-    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+    - [Based on the reason Categorize whether it is due to Price Concern or Local Brand Preference or Taste & Quality Preference or Brand Loyalty / Trust or Availability & Supply Strength or Retailer Margin Advantage or Promotions & Schemes or Packaging Preference or Customer Demand / Pull or Regional Taste / Cultural Fit or Other Factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 1:**
@@ -161,7 +182,7 @@ For EACH competitor brand and product mentioned, document separately:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 - Category:
-    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+    - [Based on the reason Categorize whether it is due to Price Concern or Local Brand Preference or Taste & Quality Preference or Brand Loyalty / Trust or Availability & Supply Strength or Retailer Margin Advantage or Promotions & Schemes or Packaging Preference or Customer Demand / Pull or Regional Taste / Cultural Fit or Other Factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 2:** (Continue for each additional competitor brand mentioned until all are covered)
@@ -171,7 +192,7 @@ For EACH competitor brand and product mentioned, document separately:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 - Category:
-    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+    - [Based on the reason Categorize whether it is due to Price Concern or Local Brand Preference or Taste & Quality Preference or Brand Loyalty / Trust or Availability & Supply Strength or Retailer Margin Advantage or Promotions & Schemes or Packaging Preference or Customer Demand / Pull or Regional Taste / Cultural Fit or Other Factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 Example:
@@ -183,7 +204,7 @@ Example:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 - Category:
-    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+    - [Based on the reason Categorize whether it is due to Price Concern or Local Brand Preference or Taste & Quality Preference or Brand Loyalty / Trust or Availability & Supply Strength or Retailer Margin Advantage or Promotions & Schemes or Packaging Preference or Customer Demand / Pull or Regional Taste / Cultural Fit or Other Factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 2:**
@@ -193,7 +214,7 @@ Example:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 - Category:
-    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+    - [Based on the reason Categorize whether it is due to Price Concern or Local Brand Preference or Taste & Quality Preference or Brand Loyalty / Trust or Availability & Supply Strength or Retailer Margin Advantage or Promotions & Schemes or Packaging Preference or Customer Demand / Pull or Regional Taste / Cultural Fit or Other Factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 **Brand 3:**
@@ -203,7 +224,7 @@ Example:
 - Reasons for Preference: Why does customer prefer this brand than Naga in detail?
     - [Price? Consumers Choice? Taste? Local brand? Habit? Promotions? etc..]
 - Category:
-    - [Based on the reason Categorize whether it is due to Price Concern or Discount Concern or Product Variety or Product Package Size or Other factors]
+    - [Based on the reason Categorize whether it is due to Price Concern or Local Brand Preference or Taste & Quality Preference or Brand Loyalty / Trust or Availability & Supply Strength or Retailer Margin Advantage or Promotions & Schemes or Packaging Preference or Customer Demand / Pull or Regional Taste / Cultural Fit or Other Factors]
       IMPORTANT - Choose the Category only on the list of reasons mentioned above, dont change the list.
 
 B. Online Retailers Mentioned
@@ -574,7 +595,7 @@ def main():
         # PRODUCT DISCUSSION TREEMAP
         # ========================
         if 'Products Discussed' in df.columns:
-            st.subheader("Product Mention Rate")
+            st.subheader("Naga Product Mention Rate")
 
             try:
                 all_products = []
@@ -685,37 +706,37 @@ def main():
         # ========================
         # PRICING CONCERN TREEMAP
         # ========================
-        if 'Pricing Concerns' in df.columns:
-            st.subheader("Products with Pricing Concerns")
+        # if 'Pricing Concerns' in df.columns:
+        #     st.subheader("Products with Pricing Concerns")
 
-            try:
-                all_concerns = []
-                for _, row in df.iterrows():
-                    concerns = [p.strip() for p in str(row["Pricing Concerns"]).split(",") if p.strip()]
-                    all_concerns.extend(concerns)
-                if all_concerns:
-                    counts = Counter(all_concerns)
-                    freq_df = pd.DataFrame(counts.items(), columns=['Concern', 'Count'])
-                    freq_df = freq_df.sort_values(by='Count', ascending=False)
+        #     try:
+        #         all_concerns = []
+        #         for _, row in df.iterrows():
+        #             concerns = [p.strip() for p in str(row["Pricing Concerns"]).split(",") if p.strip()]
+        #             all_concerns.extend(concerns)
+        #         if all_concerns:
+        #             counts = Counter(all_concerns)
+        #             freq_df = pd.DataFrame(counts.items(), columns=['Concern', 'Count'])
+        #             freq_df = freq_df.sort_values(by='Count', ascending=False)
 
-                    fig = px.treemap(
-                        freq_df,
-                        path=[px.Constant("Products with Pricing Concerns"), 'Concern'],
-                        values='Count',
-                        color='Count',
-                        color_continuous_scale='Blues',
-                    )
-                    fig.update_layout(
-                        margin=dict(t=50, l=25, r=25, b=25),
-                        uniformtext=dict(minsize=10, mode='hide')
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("No pricing concern data found.")
-            except Exception as e:
-                st.warning(f"Could not generate pricing concern treemap: {e}")
-        else:
-            st.info("The column 'Pricing Concerns' was not found in the Excel file.")
+        #             fig = px.treemap(
+        #                 freq_df,
+        #                 path=[px.Constant("Products with Pricing Concerns"), 'Concern'],
+        #                 values='Count',
+        #                 color='Count',
+        #                 color_continuous_scale='Blues',
+        #             )
+        #             fig.update_layout(
+        #                 margin=dict(t=50, l=25, r=25, b=25),
+        #                 uniformtext=dict(minsize=10, mode='hide')
+        #             )
+        #             st.plotly_chart(fig, use_container_width=True)
+        #         else:
+        #             st.info("No pricing concern data found.")
+        #     except Exception as e:
+        #         st.warning(f"Could not generate pricing concern treemap: {e}")
+        # else:
+        #     st.info("The column 'Pricing Concerns' was not found in the Excel file.")
 
     def render_individual_dashboard():
         st.title("Individual Salesperson Dashboard")
@@ -782,6 +803,32 @@ def main():
         )
         st.subheader(f"Performance Breakdown")
         st.plotly_chart(fig, use_container_width=True)
+
+        st.divider()
+
+        excel_path = os.path.join("data", 'TopSalesPitch.xlsx')
+        try:
+            df = pd.read_excel(excel_path)
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            if st.button("⬅️ Back to Home"):
+                st.session_state['page'] = 'home'
+            return
+        st.subheader("Most Pitched Items")
+        st.bar_chart(df, x="Product Name", y="Mention Count", x_label="Product Name", y_label="Mention Count", height=500, sort="-Mention Count")
+
+        st.divider()
+
+        excel_path = os.path.join("data", 'LeastPitchedItems.xlsx')
+        try:
+            df = pd.read_excel(excel_path)
+        except Exception as e:
+            st.error(f"Failed to read Excel file: {e}")
+            if st.button("⬅️ Back to Home"):
+                st.session_state['page'] = 'home'
+            return
+        st.subheader("Least Pitched Items")
+        st.bar_chart(df, x="Product Name", y="Pitch Count", x_label="Product Name", y_label="Pitch Count", height=500, sort="Pitch Count")
     
     def summary_dashboard():
         
@@ -1125,27 +1172,27 @@ def main():
     # Sidebar for instructions and navigation
     with st.sidebar:
         
-        if st.button("Home"):
+        if st.button("🏡 Home", width="stretch"):
             st.session_state['page'] = 'home'
             st.rerun()
 
-        if st.button("Summary Dashboard"):
+        if st.button("📋 Summary Dashboard", width="stretch"):
             st.session_state['page'] = 'summary_dashboard'
             st.rerun()
 
-        if st.button("Sales Performance Dashboard"):
+        if st.button("💰 Sales Performance Dashboard", width="stretch"):
             st.session_state['page'] = 'dashboard'
             st.rerun()
 
-        if st.button("Salesperson Dashboard"):
+        if st.button("👥 Salesperson Dashboard", width="stretch"):
             st.session_state['page'] = 'individual_dashboard'
             st.rerun()
 
-        if st.button("Competitor Performance Dashboard"):
+        if st.button("🎯 Competitor Performance Dashboard", width="stretch"):
             st.session_state['page'] = 'competitor_performance'
             st.rerun()
 
-        if st.button("Product Pain-Point Analytics"):
+        if st.button("⚠️ Product Pain-Point Analytics", width="stretch"):
             st.session_state['page'] = 'product_performance'
             st.rerun()
 
@@ -1171,6 +1218,9 @@ def main():
         return
     
     st.title("Sales Call Analyzer")
+    st.divider()
+    salespersonName = st.text_input("Salesperson Name")
+    storeName = st.text_input("Store Name")
     st.divider()
     # Main content area (home)
     col1, col2 = st.columns([1, 2])

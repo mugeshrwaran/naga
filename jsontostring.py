@@ -31,7 +31,7 @@ def convert_sales_report_to_string(json_data: dict) -> str:
         cols_to_keep = ['brand_name', 'product', 'reasons_for_preference', 'category']
         filtered_df = df[cols_to_keep]
         filtered_df = filtered_df.rename(columns={
-            'brand_name': 'Brand Name',
+            'brand_name': 'Competitor Brand Name',
             'product': 'Products',
             'reasons_for_preference': 'Preference Reasons',
             'category': 'Category'
